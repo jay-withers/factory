@@ -1,0 +1,19 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Environment / secrets — never commit these; gitleaks (pre-commit and CI)
+# scans every commit as a backstop.
+.env
+.env.*
+!.env.example
+
+# Logs and temp files
+*.log
+tmp/
