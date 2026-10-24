@@ -22,6 +22,9 @@
     }
   },
   "remoteUser": "vscode",
-  "postCreateCommand": "make install",
-  "postStartCommand": "gh auth status >/dev/null 2>&1 && make sync || echo 'Run gh auth login, then make sync'"
+  "postCreateCommand": {
+    "install": "make install",
+    "login-hook": "grep -qs scripts/login.sh ~/.bashrc || echo \"$PWD/scripts/login.sh\" >> ~/.bashrc"
+  },
+  "postStartCommand": "gh auth status >/dev/null 2>&1 && make sync || echo 'Not logged in to GitHub: open a terminal to log in'"
 }
