@@ -138,8 +138,10 @@ holds rights over every repo and every pipeline's permissions.
   is `SniEnabled`. Without
   `ignore_changes = [certificate_binding_type, container_app_environment_certificate_id]`
   every plan proposes replacing it, which unbinds the certificate.
-- **`workload_profile_name "Consumption" -> null`** shows in some plans: a
-  harmless provider quirk, but under approvals it makes every plan need one.
+- **Set `workload_profile_name = "Consumption"` on every container app and
+  job.** The shared environment is Consumption-only and the API reports that
+  back. Left unset, every plan shows `"Consumption" -> null`, and under
+  approvals that makes every Terraform PR need one.
 - **New Python minors break image builds** before tests notice. Compiled deps
   (httptools, pydantic-core, psycopg-binary) have no wheels yet, the slim image
   has no compiler, and `ci-python` pins its own version. Keep the Dockerfile
@@ -156,6 +158,7 @@ holds rights over every repo and every pipeline's permissions.
    + `container-build` gate), `cd-tag` → `cd-publish` with a `deploy` job
    (`container-apps-deploy.yml`), and a `make deploy` target that takes
    `IMAGE_TAG` and `ENV`. Copy from gym-log.
-3. Grant admin RBAC to explicit object IDs, never to "whoever applies".
+3. Grant admin RBAC to explicit object IDs, never to "whoever applies", and
+   set `workload_profile_name = "Consumption"` on each app and job.
 4. First `make apply` locally (it creates the resource group and grants), then
    require `terraform-plan` and `container-build` in github-repos.
