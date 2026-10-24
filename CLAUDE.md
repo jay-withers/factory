@@ -35,6 +35,12 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
 - Cross-repo questions ("which repos still pin workflows v1.4?", "what calls
   this reusable workflow?") are answered by searching `repos/`. Run
   `make sync` first if the clones might be stale.
+- **Read [docs/delivery.md](docs/delivery.md) before changing CI/CD,
+  identities, required checks or Renovate policy in any repo.** It is the
+  estate-wide map: what deploys on merge, the `terraform-approved` gate,
+  `deploy-failed` issues, which checks must always report, and the Azure
+  permission traps (join on the shared environment, "whoever applies" RBAC).
+  Keep it current when one of those changes.
 - `make status` shows uncommitted/unpushed work and every open PR.
   `make clean-worktrees` removes worktrees whose PRs are merged or closed.
 

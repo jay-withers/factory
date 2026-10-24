@@ -38,6 +38,10 @@ CATALOG.md                    generated repo list, imported by CLAUDE.md
 - **Delivery.** Every change is a normal PR, gated by that repo's required
   checks. Merging and `terraform apply` stay with you:
   `.claude/settings.json` denies them, and `CLAUDE.md` makes them hard rules.
+- **After merge.** Apps and infrastructure deploy to dev on their own:
+  `cd-publish` builds and deploys the image, and `cd-terraform` applies once a
+  plan's PR has been approved. [docs/delivery.md](docs/delivery.md) covers the
+  whole flow, the approvals, the permissions and the traps.
 - **Local runs.** The container uses the host's Docker, and app repos expose
   `make run` / `make test`, so Claude can run and smoke-test a change before
   opening the PR.
