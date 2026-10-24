@@ -61,7 +61,11 @@ each, but the rule applies however the command is spelled:
 
 - Never merge a PR, and never push to a default branch or force-push.
 - Never run `terraform apply`/`destroy` or `make apply`/`destroy` in any
-  repo. After a Terraform PR merges, tell the user to run `make apply`.
+  repo. A repo with a `cd-terraform` workflow applies on merge to main
+  through `workflows`' `terraform-deploy.yml`: after its PR merges, watch
+  that run and report the result. For any other Terraform repo, tell the
+  user to run `make apply`. `azure-landingzone` and `github-repos` always
+  stay manual.
 - Never delete, archive or rename a repo. Adding a repo means a PR to
   `github-repos` adding a `var.repos` entry in `terraform/terraform.tfvars`.
   After the user applies it, `make sync` picks the repo up.
