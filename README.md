@@ -1,114 +1,63 @@
-# template-generic-repo
+# factory
 
-A language-agnostic GitHub repository template. It gives a new repo a working
-baseline on day one — a dev container, generic pre-commit hooks, PR/merge CI
-workflows, Renovate dependency updates, and Conventional Commits enforcement —
-with no application code, so you add your own source and layer
-project-specific tooling on top.
+One place to work on every `jay-withers` repository with Claude Code. Open
+this repo, describe the change, and get a PR in the repo it belongs to, made
+in an isolated worktree, linted, tested and (for apps) run locally first.
 
 ## Getting started
 
-1. Create a repo from this template (**Use this template** on GitHub, or `gh
-   repo create --template`).
-2. Open it in the dev container (VS Code: **Reopen in Container**, or GitHub
-   Codespaces). The container runs `make install` on creation to wire up the
-   pre-commit hooks.
-3. Outside a dev container, install the hooks manually:
+1. Open the repo in its dev container (VS Code: **Reopen in Container**).
+2. Run `gh auth login` and, if you'll work on anything Azure-backed,
+   `az login`.
+3. Run `make sync` to clone every repo into `repos/` and write `CATALOG.md`.
+   After this, it runs on every container start.
+4. Start Claude Code and ask for what you want:
 
-   ```bash
-   make install
+   ```text
+   /change repo-agent add a --dry-run flag that prints the digest instead of emailing it
+   /sweep bump jay-withers/workflows to the latest release topic:python
+   which repos still don't have a make test target?
    ```
 
-## Commands
+## How it works
 
-Run `make` (or `make help`) to list the available targets:
+```text
+repos/<name>/                 clean mirror of every repo (make sync) - never edited
+worktrees/<name>--<branch>/   one per task (make task) - all changes happen here
+CATALOG.md                    generated repo list, imported by CLAUDE.md
+```
+
+- **Catalogue.** `make sync` reads `gh repo list jay-withers`. Descriptions
+  and topics there are set by Terraform from
+  [github-repos](https://github.com/jay-withers/github-repos)'
+  `terraform.tfvars`, so the two lists can't drift.
+- **Isolation.** Each task gets its own git worktree on a fresh branch from
+  the target's default branch. Parallel tasks don't collide, and `make sync`
+  can always fast-forward the mirrors. It skips, and reports, any clone that
+  is dirty or off its default branch.
+- **Delivery.** Every change is a normal PR, gated by that repo's required
+  checks. Merging and `terraform apply` stay with you:
+  `.claude/settings.json` denies them, and `CLAUDE.md` makes them hard rules.
+- **Local runs.** The container uses the host's Docker, and app repos expose
+  `make run` / `make test`, so Claude can run and smoke-test a change before
+  opening the PR.
+
+## Commands
 
 ```bash
 make install           # install pre-commit hooks (run once after cloning)
 make lint              # run all pre-commit hooks against every file
+make sync              # clone/fast-forward every repo, regenerate CATALOG.md
+make task REPO=x BRANCH=feat/y   # create worktrees/x--feat-y, print its path
+make status            # uncommitted/unpushed work, and every open PR
+make clean-worktrees   # remove worktrees whose PR is merged or closed
 ```
 
-## Pre-commit hooks
+## Known gaps
 
-Hooks live in `.pre-commit-config.yaml`, pinned by commit SHA with the tag as a
-frozen comment. They're deliberately language-agnostic:
-
-- `pre-commit/pre-commit-hooks` — large-file, case-conflict, merge-conflict,
-  symlink, YAML, end-of-file, trailing-whitespace, line-ending and shebang
-  checks, plus `no-commit-to-branch` (blocks direct commits to `main`)
-- `gitleaks` — secret scanning
-- `actionlint` — GitHub Actions workflow linting
-- `shellcheck` — shell scripts
-- `commitlint` — [Conventional Commits](https://www.conventionalcommits.org/),
-  at the `commit-msg` stage
-
-As your repo gains a language, add its formatter/linter hooks here — don't
-remove these. Renovate keeps the frozen hook revisions up to date.
-
-## Commit messages
-
-Commits must follow [Conventional Commits](https://www.conventionalcommits.org/),
-enforced by commitlint at commit-msg time. The commit type drives the automatic
-version bump on merge (see below). Examples:
-
-```text
-feat: add health check endpoint
-fix: correct retry backoff
-chore: bump dependency
-```
-
-## CI/CD
-
-Workflows are prefixed `ci-` (pull-request checks) or `cd-` (post-merge delivery):
-
-- **`.github/workflows/ci-lint.yml`** — runs all pre-commit hooks on PRs
-  to `main`, by calling the shared reusable workflow
-  `jay-withers/template-pipelines/.github/workflows/pre-commit.yml`. Its status
-  check reports as `pre-commit / Pre-commit`.
-- **`.github/workflows/cd-tag.yml`** — on every merge to `main`, creates a
-  semver tag and matching GitHub release from the Conventional Commits since the
-  last release (default bump: patch), via
-  `jay-withers/template-pipelines/.github/workflows/release.yml`.
-
-Both pin the reusable workflow by commit SHA with the tag as a comment. Add your
-own `ci-*` workflows (build, test, etc.) as you add code, and require their
-checks in branch protection (below).
-
-## Renovate
-
-`renovate.json` extends `config:recommended` on a weekly schedule with
-auto-approve and automerge. `platformAutomerge` needs repo-level auto-merge to
-be enabled — see [Configuring GitHub](#configuring-github-for-a-repo-created-from-this-template).
-The `pre-commit` manager updates the frozen hook revisions in
-`.pre-commit-config.yaml`; add language/ecosystem managers as your repo grows.
-
-## Configuring GitHub for a repo created from this template
-
-Settings that can't be templated as files — repo-level auto-merge, delete
-branch on merge, and a branch-protection ruleset requiring status checks and
-approving reviews — aren't bootstrapped by anything in this template anymore.
-A repo just created from this template gets GitHub's defaults until it's
-added to `var.repos` in
-[jay-withers/github-repos](https://github.com/jay-withers/github-repos)'
-`terraform/terraform.tfvars` and applied — that Terraform root module is now
-the single source of truth for these settings across every jay-withers repo,
-this template included.
-
-## Structure
-
-```text
-.devcontainer/
-  devcontainer.json    # dev container (ghcr.io/jay-withers/dev-containers/base)
-.github/
-  workflows/
-    ci-lint.yml        # lints all files on PRs to main (reusable workflow)
-    cd-tag.yml         # auto-tags + releases on merge to main (semver, conventional commits)
-.editorconfig          # baseline editor settings (aligned with pre-commit hooks)
-.gitattributes         # git-level LF normalization
-.pre-commit-config.yaml
-commitlint.config.js   # commitlint (Conventional Commits) config
-renovate.json          # automated dependency updates
-CLAUDE.md              # guidance for Claude Code
-LICENSE
-Makefile
-```
+- The `dev-containers/terraform` image has Python 3.12 but no `pip`/`uv`, and
+  no `kubectl`/`helm`. Python app repos may not be able to `make test` here
+  until a broader image exists in
+  [dev-containers](https://github.com/jay-withers/dev-containers).
+- App repos don't all have `make run` / `make test` yet. Adding them is the
+  first planned `/sweep`.

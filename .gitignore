@@ -17,3 +17,9 @@ Thumbs.db
 # Logs and temp files
 *.log
 tmp/
+
+# Factory working state - clones of every repo (make sync), per-task worktrees
+# (make task) and the catalogue sync generates. Never committed.
+repos/
+worktrees/
+CATALOG.md
