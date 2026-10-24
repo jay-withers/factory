@@ -76,4 +76,5 @@ behind the Makefile live in `scripts/`. `make` with no target prints help.
 The dev container is the `dev-containers/terraform` image plus
 docker-outside-of-docker. It runs `make install` on create and `make sync` on
 every start, once `gh` is logged in. Until it is, every new terminal runs
-`gh auth login` (`scripts/login.sh`, hooked into `~/.bashrc`).
+`gh auth login` and `gh auth setup-git` (`scripts/login.sh`, hooked into
+`~/.bashrc`).
