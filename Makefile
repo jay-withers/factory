@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install lint sync task status clean-worktrees
+.PHONY: help install login lint sync task status clean-worktrees
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -9,6 +9,9 @@ help: ## Show this help
 install: ## Install pre-commit hooks (run once after cloning)
 	pre-commit install
 	pre-commit install --hook-type commit-msg
+
+login: ## Log gh in to GitHub if it isn't already, then sync
+	@scripts/login.sh
 
 lint: ## Run all pre-commit hooks against every file
 	pre-commit run --all-files
