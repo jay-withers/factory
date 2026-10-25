@@ -29,7 +29,10 @@ for worktree in "$root"/worktrees/*/; do
     continue
   fi
 
-  git -C "$root/repos/$repo" worktree remove "$worktree"
-  git -C "$root/repos/$repo" branch --quiet -D "$branch"
+  # The repo the worktree belongs to: repos/<repo> for most, but this repo
+  # itself for factory's own worktrees, which have no clone under repos/.
+  common="$(git -C "$worktree" rev-parse --path-format=absolute --git-common-dir)"
+  git --git-dir="$common" worktree remove "$worktree"
+  git --git-dir="$common" branch --quiet -D "$branch"
   echo "- $name: PR ${state,,} - removed"
 done
