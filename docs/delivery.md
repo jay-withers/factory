@@ -46,9 +46,8 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
 Repos with this flow: repo-agent, gym-log, finances, career, security-testing
 (app + infra); azure-container-apps (infra); azure-support-agent (infra, with
 the image version in Terraform, so a Renovate image bump is an infra change);
-market-agent (infra only: its images still deploy by hand with `make deploy`,
-and an apply that recreates its dashboard certificate on `cae-platform-dev`
-runs locally). template-repo-terraform-root ships a dormant `cd-terraform`
+market-agent (app + infra; an apply that recreates its dashboard certificate
+on `cae-platform-dev` runs locally). template-repo-terraform-root ships a dormant `cd-terraform`
 that switches on once a repo made from it adds `terraform/backends/dev.hcl`.
 azure-landingzone and terraform-root-aks have no CD identity, on purpose:
 their applies create role assignments and policy the pipeline identities are
@@ -67,20 +66,34 @@ proves each deploy, for any repo whose Makefile has a `smoke` target:
 3. `make smoke IMAGE_TAG=<tag>` runs `scripts/smoke.sh`. For an app it checks
    that the configured image is right and that `/healthz` on the app's
    default FQDN reports `version == <tag>`, waiting up to 5 minutes for a cold
-   start. Then `/readyz` must answer 200. For a job it checks only the
-   configured image, since starting one has side effects.
+   start. Then `/readyz` must answer 200. For a job it checks the configured
+   image, then starts **one `selfcheck` run** of it: the job's own template
+   (image, identity, env, secret references) with its args swapped for
+   `selfcheck`, through ARM's `jobs/start` API (`az containerapp job start
+   --args` rebuilds the template from its flags and drops the env). The app's
+   `selfcheck` command loads settings, resolves the secrets the job reads and
+   reaches its storage or database, then exits. It never emails, calls an LLM,
+   trades or scans. Every job's run starts before any is awaited (10 minutes
+   at most).
 4. If step 2 or 3 fails, the workflow redeploys and smoke-tests the recorded
-   tag, then **fails the run anyway**. The `deploy-failed` issue says whether
+   tag with `SMOKE_PHASE=rollback` (workflows v1.14.0+), then **fails the run
+   anyway**. On a rollback the selfcheck runs are skipped, and so is `/readyz`
+   for an image without `version`: the old image may predate them, and it has
+   already run here. The `deploy-failed` issue says whether
    the rollback held.
 
-Repos with it: gym-log, finances, career (app + jobs); repo-agent,
-security-testing (jobs). `scripts/smoke.sh` is shared verbatim between them,
-so change it in all five. market-agent deploys by hand, and
-azure-support-agent's image ships through Terraform, so neither has it.
+Repos with it: gym-log, finances, career, market-agent (apps + jobs);
+repo-agent, security-testing (jobs). `scripts/smoke.sh` is shared verbatim
+between them, so change it in all six. azure-support-agent's image ships
+through Terraform, so it has none.
 
 - **Keep `version` in `/healthz`.** Without it the check falls back to
   "the latest ready revision runs the image", a weaker test that exists only
   so a rollback to an older image passes.
+- **Keep `selfcheck` side-effect free, and complete.** It runs on every
+  deploy, so anything it sends is sent every time. And a secret a job starts
+  reading but `selfcheck` doesn't check deploys green and fails at the first
+  scheduled run.
 - **A rollback moves the image, nothing else.** A release that changes stored
   data or a schema in a way the previous version can't read must not rely on
   it.
