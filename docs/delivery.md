@@ -42,9 +42,14 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
 
 Repos with this flow: repo-agent, gym-log, finances, career, security-testing
 (app + infra); azure-container-apps (infra); azure-support-agent (infra, with
-the image version in Terraform, so a Renovate image bump is an infra change).
-market-agent, azure-landingzone and terraform-root-aks have no CD identity:
-you apply and deploy those by hand.
+the image version in Terraform, so a Renovate image bump is an infra change);
+market-agent (infra only: its images still deploy by hand with `make deploy`,
+and an apply that recreates its dashboard certificate on `cae-platform-dev`
+runs locally). template-repo-terraform-root ships a dormant `cd-terraform`
+that switches on once a repo made from it adds `terraform/backends/dev.hcl`.
+azure-landingzone and terraform-root-aks have no CD identity, on purpose:
+their applies create role assignments and policy the pipeline identities are
+never granted, so you apply those by hand.
 
 ## What waits for you, and how you hear about it
 
