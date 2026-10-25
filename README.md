@@ -36,8 +36,9 @@ CATALOG.md                    generated repo list, imported by CLAUDE.md
   can always fast-forward the mirrors. It skips, and reports, any clone that
   is dirty or off its default branch.
 - **Delivery.** Every change is a normal PR, gated by that repo's required
-  checks. Merging and `terraform apply` stay with you:
-  `.claude/settings.json` denies them, and `CLAUDE.md` makes them hard rules.
+  checks. Claude merges once they're all green (squash, never bypassing the
+  ruleset); `terraform apply` stays with you: `.claude/settings.json` denies
+  it, and `CLAUDE.md` makes it a hard rule.
 - **After merge.** Apps and infrastructure deploy to dev on their own:
   `cd-publish` builds and deploys the image, and `cd-terraform` applies once a
   plan's PR has been approved. [docs/delivery.md](docs/delivery.md) covers the
