@@ -109,7 +109,7 @@ github-repos.
 
 Shared preset: [jay-withers/renovate](https://github.com/jay-withers/renovate).
 It auto-merges everything, majors included, once required checks pass, in a
-batch before 6am on Mondays. What a merged update then does:
+batch on Mondays, and only for releases at least 3 days old. What a merged update then does:
 
 | Update | After auto-merge |
 | --- | --- |
