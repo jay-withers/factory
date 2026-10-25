@@ -31,7 +31,12 @@ Request: $ARGUMENTS
    commit-msg hooks run. Fix and re-commit if they reject it; never use
    `--no-verify`.
 7. **Ship**: `git push -u origin <branch>`, then `gh pr create --fill` (or
-   write a short summary body), then `gh pr checks --watch`.
+   write a short summary body), then `gh pr checks --watch`. Once every
+   required check has passed, merge it with `gh pr merge --squash`, unless the
+   user asked to leave it open. If the branch is behind main (the rulesets
+   require it up to date), `gh pr update-branch` and wait for the checks again.
+   Never `--admin`, never round the ruleset.
 8. **Report**: the PR URL, the check results, what you verified locally, and
-   anything the user still has to do. That includes merging, and `make apply`
-   for Terraform repos. Never merge or apply yourself.
+   anything the user still has to do: applying a Terraform change (run
+   `cd-terraform` by hand, or `make apply` where a repo has no CD), and
+   merging if it was left open. Never apply yourself.

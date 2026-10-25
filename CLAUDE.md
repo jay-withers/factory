@@ -28,7 +28,8 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
   several repos: use `/sweep <request> [repos | topic:<t> | all]`. Both skills
   spell out the workflow. In short: worktree, read that repo's CLAUDE.md,
   edit, `make lint`/`make test`/`make run` locally, Conventional Commit, push,
-  `gh pr create`, `gh pr checks --watch`, report the URL.
+  `gh pr create`, `gh pr checks --watch`, merge once green (unless the user
+  asked to leave it open), report the URL.
 - **Each repo's own CLAUDE.md and README override this file.** Claude Code
   loads a nested CLAUDE.md when you work on files under it, but read it
   explicitly before your first edit in a repo anyway.
@@ -65,7 +66,11 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
 These stay human steps. `.claude/settings.json` denies the obvious forms of
 each, but the rule applies however the command is spelled:
 
-- Never merge a PR, and never push to a default branch or force-push.
+- Never push to a default branch or force-push. Merging a PR is allowed, but
+  only once every required check has passed, as a squash merge
+  (`gh pr merge --squash`), and never with `--admin` or any other way round
+  the ruleset. Merging deploys: app changes go to dev on their own, and a
+  Terraform change opens a `terraform-pending` issue for the user to apply.
 - Never run `terraform apply`/`destroy` or `make apply`/`destroy` in any
   repo. After a Terraform PR merges, tell the user to run `make apply`.
 - Never delete, archive or rename a repo. Adding a repo means a PR to

@@ -22,6 +22,8 @@ Request: $ARGUMENTS
    conventions rather than pasting identical diffs. Skip local `make run` unless
    the change touches app code.
 4. **Watch every PR's checks.** A failure in one repo doesn't block the
-   others. Fix it in that repo's worktree, or report it.
+   others. Fix it in that repo's worktree, or report it. Merge each PR
+   (`gh pr merge --squash`) once all its required checks pass, unless the user
+   asked to leave them open; never `--admin`.
 5. **Finish with a table**: repo | PR | checks | notes. Below it, list the
-   skipped repos and any follow-ups. Never merge.
+   skipped repos and any follow-ups.
