@@ -18,6 +18,7 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
          │                    │      └─ app files changed? ──► cd-publish
          │                    │                                 ├─ build + push image (ghcr.io)
          │                    │                                 └─ deploy: `make deploy IMAGE_TAG=<tag>` to dev
+         │                    │                                      └─ `make smoke` ──► fails? roll back to the previous tag
          │                    │
          │                    └─► cd-terraform (terraform/** changed) ──► plan dev
          │                           └─ changes? ──► `terraform-pending` issue
@@ -35,6 +36,8 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
   `terraform/**` but **applies only when you run it by hand** (Actions → Run
   workflow), applying exactly the plan it prints. App code deploys itself;
   infrastructure waits for you.
+- **Every app deploy is smoke-tested, and rolls back on failure.** See
+  [Smoke test and rollback](#smoke-test-and-rollback).
 - **Redeploy an existing tag:** run `cd-publish` from the Actions tab with the
   tag. Do this after a failed deploy, or after an apply that recreated a job
   (it comes back on Terraform's placeholder image).
@@ -50,6 +53,40 @@ that switches on once a repo made from it adds `terraform/backends/dev.hcl`.
 azure-landingzone and terraform-root-aks have no CD identity, on purpose:
 their applies create role assignments and policy the pipeline identities are
 never granted, so you apply those by hand.
+
+## Smoke test and rollback
+
+A green `az containerapp update` only means Azure accepted the image. Every app
+scales to zero, so a revision whose container never starts can go live
+unnoticed. So the shared `container-apps-deploy.yml` (workflows v1.13.0+)
+proves each deploy, for any repo whose Makefile has a `smoke` target:
+
+1. `make deployed-tag` records the tag live now (nothing for Terraform's
+   placeholder image).
+2. `make deploy IMAGE_TAG=<tag>`.
+3. `make smoke IMAGE_TAG=<tag>` runs `scripts/smoke.sh`. For an app it checks
+   that the configured image is right and that `/healthz` on the app's
+   default FQDN reports `version == <tag>`, waiting up to 5 minutes for a cold
+   start. Then `/readyz` must answer 200. For a job it checks only the
+   configured image, since starting one has side effects.
+4. If step 2 or 3 fails, the workflow redeploys and smoke-tests the recorded
+   tag, then **fails the run anyway**. The `deploy-failed` issue says whether
+   the rollback held.
+
+Repos with it: gym-log, finances, career (app + jobs); repo-agent,
+security-testing (jobs). `scripts/smoke.sh` is shared verbatim between them,
+so change it in all five. market-agent deploys by hand, and
+azure-support-agent's image ships through Terraform, so neither has it.
+
+- **Keep `version` in `/healthz`.** Without it the check falls back to
+  "the latest ready revision runs the image", a weaker test that exists only
+  so a rollback to an older image passes.
+- **A rollback moves the image, nothing else.** A release that changes stored
+  data or a schema in a way the previous version can't read must not rely on
+  it.
+- **One environment, one revision.** There's no staging and no blue-green: with
+  one replica and one user, the gain over rolling back is seconds of downtime,
+  against `revision_mode = "Multiple"` and traffic management in every app.
 
 ## What waits for you, and how you hear about it
 
