@@ -19,19 +19,22 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
          │                    │                                 ├─ build + push image (ghcr.io)
          │                    │                                 └─ deploy: `make deploy IMAGE_TAG=<tag>` to dev
          │                    │
-         │                    └─► cd-terraform (terraform/** changed) ──► plan + apply dev
+         │                    └─► cd-terraform (terraform/** changed) ──► plan dev
+         │                           └─ changes? ──► `terraform-pending` issue
+         │                                           └─ you: Run workflow ──► apply
          │
-         ├─ terraform-plan: dev plan, commented on the PR.
-         │    Any change ⇒ fails until the PR has `terraform-approved`
-         └─ container-build: image builds (skipped = pass)
+         ├─ terraform-plan: dev plan, commented on the PR (fails on error)
+         └─ container-build: image builds and passes Trivy (skipped = pass)
 ```
 
 - **App code:** `cd-tag` creates a tag on every merge. It calls `cd-publish`
   only when `src/`, `Dockerfile`, `pyproject.toml` or `uv.lock` changed since
   the previous tag. `cd-publish` runs as jobs inside the `cd-tag` run. Only
   manual runs appear under cd-publish in the Actions sidebar.
-- **Infrastructure:** `cd-terraform` plans and applies dev on any merge that
-  touches `terraform/**`, applying exactly the plan it printed.
+- **Infrastructure:** `cd-terraform` plans dev on any merge that touches
+  `terraform/**` but **applies only when you run it by hand** (Actions → Run
+  workflow), applying exactly the plan it prints. App code deploys itself;
+  infrastructure waits for you.
 - **Redeploy an existing tag:** run `cd-publish` from the Actions tab with the
   tag. Do this after a failed deploy, or after an apply that recreated a job
   (it comes back on Terraform's placeholder image).
@@ -43,27 +46,45 @@ the image version in Terraform, so a Renovate image bump is an infra change).
 market-agent, azure-landingzone and terraform-root-aks have no CD identity:
 you apply and deploy those by hand.
 
-## Approvals and notifications
+## What waits for you, and how you hear about it
 
-**Every Terraform change needs a human.** On a PR, `terraform-deploy.yml` fails
-a plan with any changes until the PR carries the `terraform-approved` label.
-Renovate auto-merges anything green and `cd-terraform` applies on merge, so
-without this a provider major could force-replace a Key Vault unseen.
-
-1. The PR gets `terraform-approval-required` while it waits. repo-agent's
-   weekly digest lists those PRs (`terraform.awaiting_approval`).
-2. Read the plan comment. Deletes and replaces are called out separately.
-3. Add `terraform-approved`, then **Re-run failed jobs**. Labels are read from
-   the API, because a re-run replays the original event.
-4. Merge (or let Renovate). `cd-terraform` applies.
-
-The approval label survives later pushes, Renovate rebases included. Remove it
-if the plan changes after you approve.
+**Terraform changes are applied by hand.** Merging (yours or Renovate's) only
+plans. A plan with changes opens a **`terraform-pending`** issue (one per
+directory and environment) with the plan summary and any deletes or replaces
+called out. Creating it emails you, later merges only refresh it, and
+repo-agent's weekly digest lists it (`delivery.terraform_pending`). Review the
+plan, then run `cd-terraform` from the Actions tab: that applies it and closes
+the issue. No labels, no blocked PRs.
 
 **Failed deploys open an issue.** GitHub emails a failed run only to whoever
 triggered it, and Renovate triggers most deploys. So a failed deploy or apply
-on `main` opens a `deploy-failed` issue that @-mentions the owner. A repeat
-failure comments on it, and the next success closes it.
+on `main` opens a **`deploy-failed`** issue that @-mentions you. A repeat
+failure comments on it, the next success closes it, and the digest lists it
+while open (`delivery.deploy_failed`).
+
+**Stuck Renovate PRs are named.** A Renovate PR that can't merge (a required
+check failing, or a conflict) for a week appears in the digest as
+`renovate.blocked_prs`, by name. Auto-merge never takes those, and every update
+inside stays unapplied. The lock-file maintenance PRs sat like that for a month,
+freezing CVE fixes.
+
+repo-agent reads these issues through its GitHub App's **Issues: read**
+permission; without it the delivery checks stay silent.
+
+## Security scanning
+
+| What | Where | Blocks |
+| --- | --- | --- |
+| Terraform: Checkov + tflint | pre-commit, locally and in CI | Yes (`pre-commit / Pre-commit`) |
+| Container images: Trivy | shared `docker.yml`, every build | PRs on fixable CRITICAL/HIGH (`container-build`); never a publish |
+| Code: CodeQL | `ci-codeql`, Python repos | No; alerts in the Security tab |
+| Secrets: gitleaks | pre-commit | Locally, and in CI |
+
+Trivy and CodeQL findings land in each repo's Security tab (code scanning),
+which repo-agent's digest reads. Accepted image risks go in `.trivyignore`.
+**Private vulnerability reporting** is on for every repo (github-repos): a
+"Report a vulnerability" button that turns a report into a private draft
+advisory, so a hole in a public repo needn't be disclosed in a public issue.
 
 ## Required checks
 
@@ -74,8 +95,8 @@ Set per repo in github-repos' `terraform.tfvars` (`required_status_checks`):
 | `pre-commit / Pre-commit` | All hooks |
 | `test / Test` | Test suite (app repos) |
 | `terraform / Terraform` | Credential-free init + validate |
-| `terraform-plan` | Dev plan; fails on error, or on any change without approval |
-| `container-build` | Image builds (app repos) |
+| `terraform-plan` | Dev plan; fails only on error |
+| `container-build` | Image builds and has no fixable CRITICAL/HIGH vulnerability (app repos) |
 
 **A required check must report on every PR.** One that never reports leaves
 PRs pending for ever. So nothing required is path-filtered on its trigger.
@@ -93,7 +114,7 @@ batch before 6am on Mondays. What a merged update then does:
 | Update | After auto-merge |
 | --- | --- |
 | Python deps (`uv.lock`), base-image digest | build + deploy |
-| Terraform providers, `.terraform-version`, azure-support-agent image | needs `terraform-approved` first, then apply |
+| Terraform providers, `.terraform-version`, azure-support-agent image | plan; a `terraform-pending` issue if it changes anything, applied when you run cd-terraform |
 | GitHub Actions, pre-commit hooks, shared workflow pins | tag only |
 | Python base-image **minor** (3.14 → 3.15) | never auto-merged; review it |
 
@@ -140,12 +161,17 @@ holds rights over every repo and every pipeline's permissions.
   every plan proposes replacing it, which unbinds the certificate.
 - **Set `workload_profile_name = "Consumption"` on every container app and
   job.** The shared environment is Consumption-only and the API reports that
-  back. Left unset, every plan shows `"Consumption" -> null`, and under
-  approvals that makes every Terraform PR need one.
+  back. Left unset, every plan shows `"Consumption" -> null`, so every merge
+  opens a `terraform-pending` issue for nothing.
 - **New Python minors break image builds** before tests notice. Compiled deps
   (httptools, pydantic-core, psycopg-binary) have no wheels yet, the slim image
   has no compiler, and `ci-python` pins its own version. Keep the Dockerfile
   and `ci-python` on the same minor.
+- **terraform-docs must not read the lock file** (`lockfile: false`). Reading
+  it, every lock refresh rewrote the README, Renovate's lock-file maintenance
+  PRs (which can't run hooks) failed pre-commit for a month, and the
+  transitive Python dependencies they carried, CVE fixes included, never
+  merged.
 - **Azure/naming slugs:** a user-assigned identity is `uai-…`, not `id-…`.
 
 ## Adding an app repo to this flow
