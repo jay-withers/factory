@@ -218,6 +218,17 @@ holds rights over every repo and every pipeline's permissions.
   job.** The shared environment is Consumption-only and the API reports that
   back. Left unset, every plan shows `"Consumption" -> null`, so every merge
   opens a `terraform-pending` issue for nothing.
+- **A cached OS-upgrade layer goes stale.** CI caches image layers by
+  instruction, so an `apt-get upgrade`/`apk upgrade` step is reused until its
+  line or the base digest changes, and a fix published since never reaches
+  the image. Trivy then fails a PR on a "fixable" CVE the step exists to fix
+  (market-agent's curl and libssl3, October 2026, which also held up
+  Renovate's digest PR). `docker.yml` (workflows v1.15.0+) passes
+  `OS_PATCH_DATE`, today's UTC date, to every build: declare `ARG
+  OS_PATCH_DATE` directly before the upgrade step and that layer re-runs once
+  a day while everything above it stays cached. Every app image has an
+  upgrade step declared this way: gym-log, finances, career, repo-agent,
+  security-testing and both of market-agent's.
 - **New Python minors break image builds** before tests notice. Compiled deps
   (httptools, pydantic-core, psycopg-binary) have no wheels yet, the slim image
   has no compiler, and `ci-python` pins its own version. Keep the Dockerfile
