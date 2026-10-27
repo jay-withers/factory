@@ -226,9 +226,12 @@ holds rights over every repo and every pipeline's permissions.
   Renovate's digest PR). `docker.yml` (workflows v1.15.0+) passes
   `OS_PATCH_DATE`, today's UTC date, to every build: declare `ARG
   OS_PATCH_DATE` directly before the upgrade step and that layer re-runs once
-  a day while everything above it stays cached. Every app image has an
-  upgrade step declared this way: gym-log, finances, career, repo-agent,
-  security-testing and both of market-agent's.
+  a day while everything above it stays cached. Declared in
+  security-testing's image and market-agent's dashboard. The Python app
+  images (gym-log, finances, career, repo-agent, market-agent's API) carry no
+  upgrade step of their own: they build on dev-containers' `python-app` and
+  `python-app-builder`, which upgrade on their own rebuild (`ARG REBUILD`),
+  so they pick up OS fixes through Renovate's digest bumps of those images.
 - **New Python minors break image builds** before tests notice. Compiled deps
   (httptools, pydantic-core, psycopg-binary) have no wheels yet, the slim image
   has no compiler, and `ci-python` pins its own version. Keep the Dockerfile
