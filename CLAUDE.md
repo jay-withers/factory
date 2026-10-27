@@ -92,4 +92,5 @@ The dev container is the `dev-containers/terraform` image plus
 docker-outside-of-docker. It runs `make install` on create and `make sync` on
 every start, once `gh` is logged in. Until it is, every new terminal runs
 `gh auth login` and `gh auth setup-git` (`scripts/login.sh`, hooked into
-`~/.bashrc`).
+`~/.bashrc`). "Logged in" means the token works, not just that one is stored:
+a revoked token (HTTP 401) prompts again, while an offline terminal stays quiet.
