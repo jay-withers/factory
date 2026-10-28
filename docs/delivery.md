@@ -44,7 +44,8 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
 - **Only dev** is ever applied or deployed.
 
 Repos with this flow: repo-agent, gym-log, finances, career, security-testing
-(app + infra); azure-container-apps (infra); azure-support-agent (infra, with
+(app + infra); observability (Grafana; app + infra, with a smoke test of its
+own because Grafana can't serve the shared `/healthz`); azure-container-apps (infra); azure-support-agent (infra, with
 the image version in Terraform, so a Renovate image bump is an infra change);
 market-agent (app + infra; an apply that recreates its dashboard certificate
 on `cae-platform-dev` runs locally). template-repo-terraform-root ships a dormant `cd-terraform`
@@ -100,6 +101,28 @@ through Terraform, so it has none.
 - **One environment, one revision.** There's no staging and no blue-green: with
   one replica and one user, the gain over rolling back is seconds of downtime,
   against `revision_mode = "Multiple"` and traffic management in every app.
+
+## Deploy history
+
+Every run of `container-apps-deploy.yml` (workflows v1.16.0+) ends by writing
+one row to `Deployments_CL` in the platform's Log Analytics workspace, through
+the Logs Ingestion API: repo, app, version and previous version, outcome
+(`success`, `untested`, `rolled_back`, `failed`), `renovate` or `manual`
+trigger, commit, run URL and lead time. It runs whatever the outcome, after
+the `deploy-failed` issue step, so a failed post turns the run red without
+reading as a failed deploy.
+
+- **It needs** `EVENTS_INGESTION_ENDPOINT` and `EVENTS_DCR_IMMUTABLE_ID` on the
+  repo's `dev` environment and `Monitoring Metrics Publisher` on
+  `dcr-platform-events-dev`. github-repos sets both for a consumer with
+  `send_events = true`. Without the variables the step is skipped with a
+  notice.
+- **A repo records nothing until its pin reaches v1.16.0.**
+- **`OpsEvents_CL`** sits beside it for heartbeats, drift, expiry and restore
+  tests (later phases of the observability plan).
+- **Grafana** ([observability](https://github.com/jay-withers/observability))
+  reads both tables. Its Deployments dashboard is the queryable form of this
+  history.
 
 ## What waits for you, and how you hear about it
 
@@ -192,7 +215,8 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   on its state container; **Container Apps Environment Joiner** (custom role:
   read + join) on `cae-platform-dev`. Writing any container app or job checks
   `managedEnvironments/join/action` on the environment
-  (`LinkedAuthorizationFailed` without it).
+  (`LinkedAuthorizationFailed` without it). With `send_events`,
+  **Monitoring Metrics Publisher** on the platform's events rule.
 - **Not granted: role assignments.** A change that adds or replaces a role
   assignment fails in CD, so run `make apply` locally for it.
 - **Called workflows never exceed their caller's permissions.** `cd-tag`'s
@@ -246,8 +270,8 @@ holds rights over every repo and every pipeline's permissions.
 ## Adding an app repo to this flow
 
 1. github-repos: add the repo to `var.repos` and `state_consumers` with
-   `deploy_resource_groups` and `join_container_app_environments`, then
-   `make apply`.
+   `deploy_resource_groups`, `join_container_app_environments` and
+   `send_events = true`, then `make apply`.
 2. In the repo: `ci-terraform` (plan via `terraform-deploy.yml` +
    `terraform-plan` gate), `cd-terraform`, `ci-container-build` (`changes` job
    + `container-build` gate), `cd-tag` → `cd-publish` with a `deploy` job
