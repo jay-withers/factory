@@ -210,6 +210,12 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   subject. A calling job outside it reads them as empty, which is why callers
   pass no credentials and can't gate on them. The shared workflows set
   `environment:` themselves (a job that calls a reusable workflow can't).
+- **Resource groups:** with `create_resource_groups = true` on its
+  `state_consumers` entry, github-repos creates the repo's
+  `deploy_resource_groups` itself (`prevent_destroy`, in `northeurope`, the
+  environment's region) and the repo reads them by data source. Without it,
+  the repo creates its own group with a local first apply and github-repos
+  looks it up. Only observability has moved so far; the rest follow.
 - **Grants:** Contributor on the repo's own resource group(s); Reader on the
   subscription (plans resolve shared resources); Storage Blob Data Contributor
   on its state container; **Container Apps Environment Joiner** (custom role:
@@ -217,8 +223,18 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   `managedEnvironments/join/action` on the environment
   (`LinkedAuthorizationFailed` without it). With `send_events`,
   **Monitoring Metrics Publisher** on the platform's events rule.
-- **Not granted: role assignments.** A change that adds or replaces a role
-  assignment fails in CD, so run `make apply` locally for it.
+- **Role assignments inside the repo's own group** (Key Vault, storage
+  containers): only with `create_resource_groups`, which also grants **Role
+  Based Access Control Administrator** on each group, conditioned to exclude
+  Owner, User Access Administrator and RBAC Administrator (Microsoft's "Allow
+  most roles, but don't allow others to assign roles" example). Those apply in
+  CD. The pipeline can't grant or remove any of the three, and can't create a
+  custom role to get round it.
+- **Not granted: role assignments anywhere else.** A grant outside the repo's
+  own group (observability's Log Analytics Reader on the platform workspace,
+  security-testing's subscription Reader), or any grant in a repo still on
+  `create_resource_groups = false`, fails in CD, so run `make apply` locally
+  for it.
 - **Called workflows never exceed their caller's permissions.** `cd-tag`'s
   `publish` job grants `id-token: write` and `issues: write` so `cd-publish`'s
   deploy can use them.
@@ -266,12 +282,22 @@ holds rights over every repo and every pipeline's permissions.
   transitive Python dependencies they carried, CVE fixes included, never
   merged.
 - **Azure/naming slugs:** a user-assigned identity is `uai-…`, not `id-…`.
+- **Moving a resource group to github-repos goes import first.** Add
+  `create_resource_groups = true` and an `import` block for the group in
+  github-repos and apply it, then drop it from the repo with
+  `removed { from = azurerm_resource_group.this  lifecycle { destroy = false } }`
+  and a data source of the same name. Name, region and tags must match, or
+  the import shows a diff. The other order leaves the group unmanaged for a
+  while; a plain delete of the resource block would destroy it. Delete the
+  `import` block in a later change.
 
 ## Adding an app repo to this flow
 
 1. github-repos: add the repo to `var.repos` and `state_consumers` with
-   `deploy_resource_groups`, `join_container_app_environments` and
-   `send_events = true`, then `make apply`.
+   `deploy_resource_groups`, `create_resource_groups = true`,
+   `join_container_app_environments` and `send_events = true`, then
+   `make apply`. That creates the resource group, the identity and every
+   grant on the group.
 2. In the repo: `ci-terraform` (plan via `terraform-deploy.yml` +
    `terraform-plan` gate), `cd-terraform`, `ci-container-build` (`changes` job
    + `container-build` gate), `cd-tag` → `cd-publish` with a `deploy` job
@@ -286,5 +312,8 @@ holds rights over every repo and every pipeline's permissions.
    `$PORT` (set it to the ingress target port) and exits 0 inside a job.
    Set `args`, never `command`: a `command` replaces the placeholder's
    entrypoint, so it can't start (market-agent still sets one).
-4. First `make apply` locally (it creates the resource group and grants), then
-   require `terraform-plan` and `container-build` in github-repos.
+   Read the resource group with `data "azurerm_resource_group"`, never create
+   it: github-repos owns it.
+4. Apply through `cd-terraform`; no local first apply is needed unless the
+   repo grants roles outside its own group (then `make apply` locally for
+   those). Then require `terraform-plan` and `container-build` in github-repos.
