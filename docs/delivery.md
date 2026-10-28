@@ -279,5 +279,12 @@ holds rights over every repo and every pipeline's permissions.
    `IMAGE_TAG` and `ENV`. Copy from gym-log.
 3. Grant admin RBAC to explicit object IDs, never to "whoever applies", and
    set `workload_profile_name = "Consumption"` on each app and job.
+   Create every app and job on `ghcr.io/jay-withers/dev-containers/placeholder:latest`
+   with the image under `ignore_changes`, never on a release tag: no release
+   exists before the first apply, and a guessed tag passes plan and apply and
+   fails only on the pull. The placeholder answers 200 on every path on
+   `$PORT` (set it to the ingress target port) and exits 0 inside a job.
+   Set `args`, never `command`: a `command` replaces the placeholder's
+   entrypoint, so it can't start (market-agent still sets one).
 4. First `make apply` locally (it creates the resource group and grants), then
    require `terraform-plan` and `container-build` in github-repos.
