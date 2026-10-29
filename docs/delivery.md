@@ -215,8 +215,9 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   `deploy_resource_groups` itself (`prevent_destroy`, in `northeurope`, the
   environment's region) and the repo reads them by data source. Without it,
   the repo creates its own group with a local first apply and github-repos
-  looks it up. Every app repo has moved except market-agent; it and
-  azure-container-apps (`rg-platform-dev`) still use the lookup.
+  looks it up. Every app repo has moved; only azure-container-apps
+  (`rg-platform-dev`) stays on the lookup, deliberately: RBAC Administrator
+  there would reach the shared Postgres, workspace and events rule.
 - **Grants:** Contributor on the repo's own resource group(s); Reader on the
   subscription (plans resolve shared resources); Storage Blob Data Contributor
   on its state container; **Container Apps Environment Joiner** (custom role:
@@ -229,7 +230,7 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   Based Access Control Administrator** on each group, conditioned to exclude
   Owner, User Access Administrator and RBAC Administrator (Microsoft's "Allow
   most roles, but don't allow others to assign roles" example). Those apply in
-  CD. The pipeline can't grant or remove any of the three, and can't create a
+  CD (first proved by gym-log#106 on 2026-10-29). The pipeline can't grant or remove any of the three, and can't create a
   custom role to get round it.
 - **Not granted: role assignments anywhere else.** A grant outside the repo's
   own group (observability's Log Analytics Reader on the platform workspace,
