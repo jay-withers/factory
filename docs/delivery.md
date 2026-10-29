@@ -215,7 +215,8 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   `deploy_resource_groups` itself (`prevent_destroy`, in `northeurope`, the
   environment's region) and the repo reads them by data source. Without it,
   the repo creates its own group with a local first apply and github-repos
-  looks it up. Only observability has moved so far; the rest follow.
+  looks it up. Every app repo has moved except market-agent; it and
+  azure-container-apps (`rg-platform-dev`) still use the lookup.
 - **Grants:** Contributor on the repo's own resource group(s); Reader on the
   subscription (plans resolve shared resources); Storage Blob Data Contributor
   on its state container; **Container Apps Environment Joiner** (custom role:
