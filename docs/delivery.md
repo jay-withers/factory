@@ -56,7 +56,8 @@ Repos with this flow: repo-agent, gym-log, finances, career, security-testing
 own because Grafana can't serve the shared `/healthz`); azure-container-apps (infra); azure-support-agent (infra, with
 the image version in Terraform, so a Renovate image bump is an infra change);
 market-agent (app + infra; an apply that recreates its dashboard certificate
-on `cae-platform-dev` runs locally). template-repo-terraform-root ships a dormant `cd-terraform`
+on `cae-platform-dev` runs locally); github-repos (infra, with separate plan and
+apply identities: see [Identities and permissions](#identities-and-permissions)). template-repo-terraform-root ships a dormant `cd-terraform`
 that switches on once a repo made from it adds `terraform/backends/dev.hcl`.
 azure-landingzone and terraform-root-aks have no CD identity, on purpose:
 their applies create role assignments and policy the pipeline identities are
@@ -261,8 +262,29 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   `publish` job grants `id-token: write` and `issues: write` so `cd-publish`'s
   deploy can use them.
 
-**github-repos itself is applied by hand** (`make apply`), on purpose. It
-holds rights over every repo and every pipeline's permissions.
+**github-repos applies through `cd-terraform` too, with two identities.** It
+holds rights over every repo and every pipeline's permissions, so:
+
+- **PR plans** run in its `dev` environment as `uai-github-repos-deploy-dev`
+  (subscription Reader, `subscription_reader`), with a read-only
+  `TF_GITHUB_TOKEN` environment secret.
+- **Merge plans and applies** run in its `apply` environment, which only
+  `main` can deploy to, as `uai-github-repos-apply-dev` (Contributor + User
+  Access Administrator on the subscription, Storage Blob Data Contributor on
+  its state container), with an admin `TF_GITHUB_TOKEN`. Branch code never
+  gets either.
+- **azure-landingzone's `governance` creates and grants that identity**
+  (`main.github-repos.tf`), never github-repos itself, so no apply can
+  widen or remove its own rights. Changing it is a manual apply there.
+- The shared `terraform-deploy.yml` (v1.18.0+) takes `github-environment`
+  (run in a GitHub environment other than `environment`) and
+  `environment-files: false` (use the root's own backend block and
+  `terraform.tfvars`) for this, and maps an environment's `TF_GITHUB_TOKEN`
+  secret to `GITHUB_TOKEN`. Keep that token an environment secret: a
+  repository secret reaches every branch.
+- **Break-glass:** `make apply` locally still works, for an apply that broke
+  the `apply` environment or its identity, or a required check nothing
+  reports.
 
 ## Traps found the hard way
 
@@ -317,8 +339,8 @@ holds rights over every repo and every pipeline's permissions.
 
 1. github-repos: add the repo to `var.repos` and `state_consumers` with
    `deploy_resource_groups`, `create_resource_groups = true`,
-   `join_container_app_environments` and `send_events = true`, then
-   `make apply`. That creates the resource group, the identity and every
+   `join_container_app_environments` and `send_events = true`, merge, then
+   run github-repos' `cd-terraform`. That creates the resource group, the identity and every
    grant on the group.
 2. In the repo: `ci-terraform` (plan via `terraform-deploy.yml` +
    `terraform-plan` gate), `cd-terraform`, `ci-container-build` (`changes` job
