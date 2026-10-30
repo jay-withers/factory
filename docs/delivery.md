@@ -17,8 +17,11 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
          │                    ├─► cd-tag ──► version tag
          │                    │      └─ app files changed? ──► cd-publish
          │                    │                                 ├─ build + push image (ghcr.io)
-         │                    │                                 └─ deploy: `make deploy IMAGE_TAG=<tag>` to dev
-         │                    │                                      └─ `make smoke` ──► fails? roll back to the previous tag
+         │                    │                                 └─ gate: Renovate's, no lock-file major, nothing held?
+         │                    │                                      ├─ yes ──► deploy: `make deploy IMAGE_TAG=<tag>` to dev
+         │                    │                                      │            └─ `make smoke` ──► fails? roll back
+         │                    │                                      └─ no ──► `deploy-pending` issue
+         │                    │                                                └─ you: run cd-publish with the tag ──► deploy
          │                    │
          │                    └─► cd-terraform (terraform/** changed) ──► plan dev
          │                           └─ changes? ──► `terraform-pending` issue
@@ -32,10 +35,15 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
   only when `src/`, `Dockerfile`, `pyproject.toml` or `uv.lock` changed since
   the previous tag. `cd-publish` runs as jobs inside the `cd-tag` run. Only
   manual runs appear under cd-publish in the Actions sidebar.
+- **Only routine Renovate releases deploy themselves** (workflows v1.17.0+).
+  The shared deploy's `gate` job holds a release that a person merged, one
+  whose `uv.lock` moves a package up a major version (a minor, below 1.0),
+  and any release while an earlier one is held. See
+  [What waits for you](#what-waits-for-you-and-how-you-hear-about-it).
 - **Infrastructure:** `cd-terraform` plans dev on any merge that touches
   `terraform/**` but **applies only when you run it by hand** (Actions → Run
-  workflow), applying exactly the plan it prints. App code deploys itself;
-  infrastructure waits for you.
+  workflow), applying exactly the plan it prints. Infrastructure always waits
+  for you; app code waits unless Renovate's routine update shipped it.
 - **Every app deploy is smoke-tested, and rolls back on failure.** See
   [Smoke test and rollback](#smoke-test-and-rollback).
 - **Redeploy an existing tag:** run `cd-publish` from the Actions tab with the
@@ -107,8 +115,8 @@ through Terraform, so it has none.
 Every run of `container-apps-deploy.yml` (workflows v1.16.0+) ends by writing
 one row to `Deployments_CL` in the platform's Log Analytics workspace, through
 the Logs Ingestion API: repo, app, version and previous version, outcome
-(`success`, `untested`, `rolled_back`, `failed`), `renovate` or `manual`
-trigger, commit, run URL and lead time. It runs whatever the outcome, after
+(`success`, `untested`, `rolled_back`, `failed`), `renovate`, `manual` (a person's change, including a held release run by
+hand) or `redeploy` trigger, commit, run URL and lead time. It runs whatever the outcome, after
 the `deploy-failed` issue step, so a failed post turns the run red without
 reading as a failed deploy.
 
@@ -133,6 +141,18 @@ called out. Creating it emails you, later merges only refresh it, and
 repo-agent's weekly digest lists it (`delivery.terraform_pending`). Review the
 plan, then run `cd-terraform` from the Actions tab: that applies it and closes
 the issue. No labels, no blocked PRs.
+
+**Your app changes, and Renovate's majors, are deployed by hand.** The
+image is built and pushed on merge, but a held release opens a
+**`deploy-pending`** issue (one per environment and app) naming the tag and
+any major updates. Run `cd-publish` from the Actions tab with that tag: it
+deploys, smoke-tests, and closes the issue. A later merge moves the issue to
+the newer tag, which carries everything before it, and while it's open
+Renovate's releases wait there too. Re-running a held run also deploys.
+Majors are read from the lock files because pyproject sets only lower bounds,
+so most arrive inside lock-file maintenance, which Renovate never calls major.
+A repo opts out with `deploy-on-merge: all` on its deploy job. Each repo
+holds only once its pin reaches v1.17.0.
 
 **Failed deploys open an issue.** GitHub emails a failed run only to whoever
 triggered it, and Renovate triggers most deploys. So a failed deploy or apply
@@ -191,7 +211,7 @@ batch on Mondays, and only for releases at least 3 days old. What a merged updat
 
 | Update | After auto-merge |
 | --- | --- |
-| Python deps (`uv.lock`), base-image digest | build + deploy |
+| Python deps (`uv.lock`), base-image digest | build + deploy; build + `deploy-pending` if a package rose a major (a minor, below 1.0) |
 | Terraform providers, `.terraform-version`, azure-support-agent image | plan; a `terraform-pending` issue if it changes anything, applied when you run cd-terraform |
 | GitHub Actions, pre-commit hooks, shared workflow pins | tag only |
 | Python base-image **minor** (3.14 → 3.15) | never auto-merged; review it |
