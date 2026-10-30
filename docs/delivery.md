@@ -280,7 +280,10 @@ holds rights over every repo and every pipeline's permissions, so:
   (run in a GitHub environment other than `environment`) and
   `environment-files: false` (use the root's own backend block and
   `terraform.tfvars`) for this, and maps an environment's `TF_GITHUB_TOKEN`
-  secret to `GITHUB_TOKEN`. Keep that token an environment secret: a
+  secret to `GITHUB_TOKEN` (v1.18.1+). The calling job must pass
+  `secrets: inherit`: without it the called job sees no secrets at all, its
+  own environment's included, and the provider runs unauthenticated
+  (`403 API rate limit of 60`). Keep that token an environment secret: a
   repository secret reaches every branch.
 - **Break-glass:** `make apply` locally still works, for an apply that broke
   the `apply` environment or its identity, or a required check nothing
