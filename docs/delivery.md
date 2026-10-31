@@ -127,8 +127,22 @@ reading as a failed deploy.
   `send_events = true`. Without the variables the step is skipped with a
   notice.
 - **A repo records nothing until its pin reaches v1.16.0.**
-- **`OpsEvents_CL`** sits beside it for heartbeats, drift, expiry and restore
-  tests (later phases of the observability plan).
+- **`OpsEvents_CL`** sits beside it: one row per check result, `Kind` and
+  `Name` saying what was checked, `Status` `ok`, `failed`, `drifted`,
+  `expiring` or `overdue`. Three emitters so far (phase 2 of the
+  observability plan):
+  - **drift**, nightly from `schedule-drift.yml` in every repo with a
+    cd-terraform (workflows' `terraform-deploy.yml` with `drift: true`,
+    v1.20.0+ so `TF_VAR_*` variables reach the plan). It never applies and
+    never opens a `terraform-pending` issue; a drifted root is a green run.
+  - **expiry**, nightly from observability: TLS on every custom domain.
+  - **heartbeat**, hourly from observability: one per Container Apps job,
+    cadence learned from 30 days of system logs, so adding a job needs no
+    edit anywhere. Plus one for `Deployments_CL` (overdue after 14 days).
+- **Two platform alerts read it** (azure-container-apps): `ops_event_bad` on
+  the latest bad row per check, and `ops_events_silent` when the table is
+  quiet for six hours, which catches a dead emitter. A repo whose identity
+  lacks `send_events` skips its row with a notice, and so goes unwatched.
 - **Grafana** ([observability](https://github.com/jay-withers/observability))
   reads both tables. Its Deployments dashboard is the queryable form of this
   history.
