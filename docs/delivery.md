@@ -57,7 +57,8 @@ own because Grafana can't serve the shared `/healthz`); azure-container-apps (in
 the image version in Terraform, so a Renovate image bump is an infra change);
 market-agent (app + infra; an apply that recreates its dashboard certificate
 on `cae-platform-dev` runs locally); github-repos (infra, one main-only environment
-and no PR plan: see [Identities and permissions](#identities-and-permissions)). template-repo-terraform-root ships a dormant `cd-terraform`
+and no PR plan: see [Identities and permissions](#identities-and-permissions)); cloudflare (infra: the `jaywithers.uk`
+DNS records, applied to Cloudflare, not Azure). template-repo-terraform-root ships a dormant `cd-terraform`
 that switches on once a repo made from it adds `terraform/backends/dev.hcl`.
 azure-landingzone and terraform-root-aks have no CD identity, on purpose:
 their applies create role assignments and policy the pipeline identities are
@@ -238,6 +239,18 @@ github-repos' `state_consumers` creates one user-assigned identity per repo
 GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
 `AZURE_SUBSCRIPTION_ID` on that environment.
 
+- **State containers:** github-repos creates each consumer's container in
+  `sttfsharedjw` too (`azurerm_storage_container.consumer`, `prevent_destroy`,
+  github-repos#93), so a new consumer is one tfvars entry.
+  `scripts/bootstrap-state.ps1` only makes the account and github-repos' own
+  container.
+- **cloudflare** has a state-only identity: no resource group and no Reader,
+  only its state container and (`send_events`) the events rule for its drift
+  check. The provider authenticates with `CLOUDFLARE_API_TOKEN`, a token
+  scoped to DNS edit on the zone, held as an environment secret on its `dev`
+  environment. `terraform-deploy.yml` (v1.21.0+) maps it like
+  `TF_GITHUB_TOKEN`, and every caller passes `secrets: inherit`.
+
 - **OIDC subject:** repos use GitHub's immutable form,
   `repo:jay-withers@<owner id>/<repo>@<repo id>:environment:dev`. The readable
   `repo:jay-withers/<repo>` never matches (AADSTS700213).
@@ -329,7 +342,11 @@ so:
 - **Managed-certificate custom domains:** after `make bind-domain` the domain
   is `SniEnabled`. Without
   `ignore_changes = [certificate_binding_type, container_app_environment_certificate_id]`
-  every plan proposes replacing it, which unbinds the certificate.
+  every plan proposes replacing it, which unbinds the certificate. The DNS
+  half (CNAME and `asuid` TXT) is one line in cloudflare's `app_domains`,
+  applied before the certificate; it must stay DNS only, never proxied.
+  Never edit those records in the dashboard: the next apply reverts them,
+  and the nightly drift check reports them.
 - **Set `workload_profile_name = "Consumption"` on every container app and
   job.** The shared environment is Consumption-only and the API reports that
   back. Left unset, every plan shows `"Consumption" -> null`, so every merge
@@ -372,8 +389,8 @@ so:
 1. github-repos: add the repo to `var.repos` and `state_consumers` with
    `deploy_resource_groups`, `create_resource_groups = true`,
    `join_container_app_environments` and `send_events = true`, merge, then
-   run github-repos' `cd-terraform`. That creates the resource group, the identity and every
-   grant on the group.
+   run github-repos' `cd-terraform`. That creates the resource group, the
+   state container, the identity and every grant on the group.
 2. In the repo: `ci-terraform` (plan via `terraform-deploy.yml` +
    `terraform-plan` gate), `cd-terraform`, `ci-container-build` (`changes` job
    + `container-build` gate), `cd-tag` → `cd-publish` with a `deploy` job
