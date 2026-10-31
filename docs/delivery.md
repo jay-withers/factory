@@ -193,6 +193,30 @@ permission; without it the delivery checks stay silent.
 | Container images: Trivy | shared `docker.yml`, every build | PRs on fixable CRITICAL/HIGH (`container-build`); never a publish |
 | Code: CodeQL | `ci-codeql`, Python repos | No; alerts in the Security tab |
 | Secrets: gitleaks | pre-commit | Locally, and in CI |
+| Secrets: GitHub secret scanning + push protection | every repo (github-repos `repo_defaults`) | Pushes containing a known secret |
+| Image provenance + SBOM | shared `docker.yml` attests every pushed image (v1.22.0+) | Deploys: `container-apps-deploy.yml` refuses an unattested tag when `verify-images` is set |
+| Azure posture | azure-landingzone `governance`: Defender foundational CSPM, baseline policy | Storage without secure transfer (Deny); the rest audit |
+
+**Provenance.** On a push, `docker.yml` signs build provenance and a Trivy
+CycloneDX SBOM over the image digest (`actions/attest-*`) and pushes both to the
+registry. Before `make deploy`, `container-apps-deploy.yml` runs `gh attestation
+verify --bundle-from-oci --repo <repo> --signer-workflow
+jay-withers/workflows/.github/workflows/docker.yml` for each `verify-images`
+entry at the release tag, so a tag re-pointed by hand never goes live. A
+failure stops the run before anything changes (a `deploy-failed` issue).
+Rollbacks aren't checked. Every image-publishing repo passes `verify-images`
+(2026-10-31); their publish jobs grant `id-token: write` and `attestations:
+write`, and cd-tag's calling job grants `attestations: write` too. Non-provider
+secret patterns stay off: GitHub ignores them on user-owned repos.
+
+**Runner egress.** The credentialled jobs of `terraform-deploy.yml` and
+`container-apps-deploy.yml` start with harden-runner in **audit** mode (v1.22.0+):
+an inventory of outbound connections, nothing blocked yet.
+
+**Privilege alerts.** governance emails on every role assignment and role
+definition write or delete, policy assignment delete, policy exemption write,
+federated credential write and Key Vault delete, whoever the caller. CD's own
+grants (a new repo in github-repos, an app's vault grant) email too.
 
 Trivy and CodeQL findings land in each repo's Security tab (code scanning),
 which repo-agent's digest reads. Accepted image risks go in `.trivyignore`.
@@ -297,6 +321,14 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   `TF_VAR_OPERATOR` from its `apply` environment, set by hand. A
   local plan needs the same values exported (`gh variable list --env dev`).
   azure-landingzone, applied by hand, still keeps them in its tfvars.
+- **EasyAuth app registrations live in azure-landingzone `governance`**
+  (`app_auth`), applied by hand, because no pipeline identity has Graph rights.
+  Each one is assigned to the operator only (`app_role_assignment_required`)
+  and federated to its app's own `uai-<project>-dev`, so no client secret
+  exists. An app turns Entra sign-in on by setting `auth_client_id` (from
+  `app_auth_client_ids`); `/healthz` and `/readyz` stay excluded for the smoke
+  test. gym-log has the authConfig (off until set); the other public apps
+  follow. Once on, security-testing's DAST sees the login redirect, not the app.
 - **Called workflows never exceed their caller's permissions.** `cd-tag`'s
   `publish` job grants `id-token: write` and `issues: write` so `cd-publish`'s
   deploy can use them.
