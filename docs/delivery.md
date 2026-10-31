@@ -321,14 +321,9 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   `TF_VAR_OPERATOR` from its `apply` environment, set by hand. A
   local plan needs the same values exported (`gh variable list --env dev`).
   azure-landingzone, applied by hand, still keeps them in its tfvars.
-- **EasyAuth app registrations live in azure-landingzone `governance`**
-  (`app_auth`), applied by hand, because no pipeline identity has Graph rights.
-  Each one is assigned to the operator only (`app_role_assignment_required`)
-  and federated to its app's own `uai-<project>-dev`, so no client secret
-  exists. An app turns Entra sign-in on by setting `auth_client_id` (from
-  `app_auth_client_ids`); `/healthz` and `/readyz` stay excluded for the smoke
-  test. gym-log has the authConfig (off until set); the other public apps
-  follow. Once on, security-testing's DAST sees the login redirect, not the app.
+- **No Entra sign-in for users (Container Apps EasyAuth), by decision.** The
+  public apps keep their own passcode gate. Tried on gym-log and reverted on
+  2026-10-31 (gym-log#118, azure-landingzone#68). Don't propose it again.
 - **Called workflows never exceed their caller's permissions.** `cd-tag`'s
   `publish` job grants `id-token: write` and `issues: write` so `cd-publish`'s
   deploy can use them.
