@@ -38,9 +38,10 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
   `make sync` first if the clones might be stale.
 - **Read [docs/delivery.md](docs/delivery.md) before changing CI/CD,
   identities, required checks or Renovate policy in any repo.** It is the
-  estate-wide map: what deploys on merge, the `terraform-approved` gate,
-  `deploy-failed` issues, which checks must always report, and the Azure
-  permission traps (join on the shared environment, "whoever applies" RBAC).
+  estate-wide map: what deploys on merge, the `terraform-pending` and
+  `deploy-pending` issues that wait for the user, `deploy-failed` issues,
+  which checks must always report, and the Azure permission traps (join on
+  the shared environment, "whoever applies" RBAC).
   Keep it current when one of those changes.
 - `make status` shows uncommitted/unpushed work and every open PR.
   `make clean-worktrees` removes worktrees whose PRs are merged or closed.
@@ -72,10 +73,13 @@ each, but the rule applies however the command is spelled:
   the ruleset. Merging deploys: app changes go to dev on their own, and a
   Terraform change opens a `terraform-pending` issue for the user to apply.
 - Never run `terraform apply`/`destroy` or `make apply`/`destroy` in any
-  repo. A repo with a `cd-terraform` workflow applies on merge to main
-  through `workflows`' `terraform-deploy.yml`: after its PR merges, watch
-  that run and report the result. For any other Terraform repo, tell the
-  user to run `make apply`. `azure-landingzone` always stays manual.
+  repo. A repo with a `cd-terraform` workflow only plans on merge to main
+  (through `workflows`' `terraform-deploy.yml`). A plan with changes opens
+  a `terraform-pending` issue, and the user applies it by running
+  `cd-terraform` from the Actions tab. After the PR merges, watch the plan
+  run and report the issue. Never dispatch `cd-terraform` yourself. For any
+  other Terraform repo, tell the user to run `make apply`.
+  `azure-landingzone` always stays manual.
   `github-repos` uses `cd-terraform` like the rest, as a separate privileged
   identity (see docs/delivery.md).
 - Never delete, archive or rename a repo. Adding a repo means a PR to
