@@ -56,8 +56,8 @@ Repos with this flow: repo-agent, gym-log, finances, career, security-testing
 own because Grafana can't serve the shared `/healthz`); azure-container-apps (infra); azure-support-agent (infra, with
 the image version in Terraform, so a Renovate image bump is an infra change);
 market-agent (app + infra; an apply that recreates its dashboard certificate
-on `cae-platform-dev` runs locally); github-repos (infra, with separate plan and
-apply identities: see [Identities and permissions](#identities-and-permissions)). template-repo-terraform-root ships a dormant `cd-terraform`
+on `cae-platform-dev` runs locally); github-repos (infra, one main-only environment
+and no PR plan: see [Identities and permissions](#identities-and-permissions)). template-repo-terraform-root ships a dormant `cd-terraform`
 that switches on once a repo made from it adds `terraform/backends/dev.hcl`.
 azure-landingzone and terraform-root-aks have no CD identity, on purpose:
 their applies create role assignments and policy the pipeline identities are
@@ -267,24 +267,27 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   to Terraform, lower-casing the name after the prefix (GitHub stores it
   upper-cased). The consumers declare these variables required, so a missing
   one fails the plan rather than dropping a grant. github-repos itself reads
-  `TF_VAR_OPERATOR` from its `dev` and `apply` environments, set by hand. A
+  `TF_VAR_OPERATOR` from its `apply` environment, set by hand. A
   local plan needs the same values exported (`gh variable list --env dev`).
   azure-landingzone, applied by hand, still keeps them in its tfvars.
 - **Called workflows never exceed their caller's permissions.** `cd-tag`'s
   `publish` job grants `id-token: write` and `issues: write` so `cd-publish`'s
   deploy can use them.
 
-**github-repos applies through `cd-terraform` too, with two identities.** It
-holds rights over every repo and every pipeline's permissions, so:
+**github-repos applies through `cd-terraform` too, from one environment with
+one PAT.** It holds rights over every repo and every pipeline's permissions,
+so:
 
-- **PR plans** run in its `dev` environment as `uai-github-repos-deploy-dev`
-  (subscription Reader, `subscription_reader`), with a read-only
-  `TF_GITHUB_TOKEN` environment secret.
-- **Merge plans and applies** run in its `apply` environment, which only
-  `main` can deploy to, as `uai-github-repos-apply-dev` (Contributor + User
-  Access Administrator on the subscription, Storage Blob Data Contributor on
-  its state container), with an admin `TF_GITHUB_TOKEN`. Branch code never
-  gets either.
+- **Merge plans, applies and the nightly drift check** run in its `apply`
+  environment, which only `main` can deploy to, as `uai-github-repos-apply-dev`
+  (Contributor + User Access Administrator on the subscription, Storage Blob
+  Data Contributor on its state container), with an admin `TF_GITHUB_TOKEN`.
+  It has no `dev` environment and isn't a `state_consumers` entry.
+- **No credentialled plan on PRs** (github-repos#97). A read-only PAT can't
+  see each repo's merge settings, so its plans proposed phantom changes on
+  every repo, and the only credentials that read everything are the apply
+  ones, which branch code never gets. PRs run validate; read the real plan in
+  the `terraform-pending` issue before Run workflow.
 - **azure-landingzone's `governance` creates and grants that identity**
   (`main.github-repos.tf`), never github-repos itself, so no apply can
   widen or remove its own rights. Changing it is a manual apply there.
