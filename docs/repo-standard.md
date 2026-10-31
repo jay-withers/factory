@@ -105,14 +105,12 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
 
 ## Known drift from this standard
 
-Fix these when you're in the repo for something else, or in a sweep:
-
-- template-repo-terraform-root's CLAUDE.md still names `template-pipelines`
-  (now `workflows`). So does workflows' own README.
-- renovate's README still uses the `template-renovate` name.
-- market-agent still sets `command` on its workloads.
-- terraform-root-aks still uses readable OIDC subjects, not the immutable
-  form.
-- azure-container-apps' README "Bootstrapping" still says to create its state
-  container by hand. github-repos creates it now, so on a fresh subscription
-  that step collides (see [greenfield.md](greenfield.md)).
+- **terraform-root-aks issues readable OIDC subjects**, not the immutable
+  form. Moving needs its repo's OIDC customisation changed and new subjects
+  applied in azure-landingzone's `landingzones`. Do it when the cluster comes
+  back.
+- **market-agent sets `command`** and creates its workloads on a real release
+  tag rather than the placeholder. It works, because the image's ENTRYPOINT is
+  the same `marketagent` and `command` is under `ignore_changes`. Don't copy
+  it. Move it to the placeholder and `args` only if those resources are being
+  recreated anyway.
