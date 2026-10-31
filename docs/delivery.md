@@ -258,6 +258,18 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   security-testing's subscription Reader), or any grant in a repo still on
   `create_resource_groups = false`, fails in CD, so run `make apply` locally
   for it.
+- **The operator's identifiers are pipeline variables, not code.**
+  github-repos' `var.operator` (Entra object ID, UPN, alert email) sets
+  `TF_VAR_KEY_VAULT_ADMINISTRATOR_OBJECT_IDS`, `TF_VAR_ADMINISTRATOR_OBJECT_ID`,
+  `TF_VAR_ALERT_EMAIL_ADDRESS` and `TF_VAR_POSTGRES_ENTRA_ADMINISTRATOR` on
+  the `dev` environment of every consumer with `deploy_resource_groups`.
+  `terraform-deploy.yml` (v1.20.0+) exports every `TF_VAR_*` Actions variable
+  to Terraform, lower-casing the name after the prefix (GitHub stores it
+  upper-cased). The consumers declare these variables required, so a missing
+  one fails the plan rather than dropping a grant. github-repos itself reads
+  `TF_VAR_OPERATOR` from its `dev` and `apply` environments, set by hand. A
+  local plan needs the same values exported (`gh variable list --env dev`).
+  azure-landingzone, applied by hand, still keeps them in its tfvars.
 - **Called workflows never exceed their caller's permissions.** `cd-tag`'s
   `publish` job grants `id-token: write` and `issues: write` so `cd-publish`'s
   deploy can use them.
