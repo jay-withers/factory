@@ -43,6 +43,14 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
   which checks must always report, and the Azure permission traps (join on
   the shared environment, "whoever applies" RBAC).
   Keep it current when one of those changes.
+- **[docs/autonomy.md](docs/autonomy.md) says when to ask and when to just
+  proceed.** Default to proceeding: the guardrails above catch mistakes.
+- **[docs/repo-standard.md](docs/repo-standard.md) is the shape every repo
+  should have.** Build new repos to it, and use it to tell a deliberate
+  exception from drift.
+- **[docs/greenfield.md](docs/greenfield.md) is the apply order for
+  rebuilding the estate in a new tenant**, with every literal tied to the
+  current tenant. A new tenant-bound literal belongs in its table.
 - `make status` shows uncommitted/unpushed work and every open PR.
   `make clean-worktrees` removes worktrees whose PRs are merged or closed.
 
