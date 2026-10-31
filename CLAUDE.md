@@ -79,9 +79,10 @@ each, but the rule applies however the command is spelled:
   `cd-terraform` from the Actions tab. After the PR merges, watch the plan
   run and report the issue. Never dispatch `cd-terraform` yourself. For any
   other Terraform repo, tell the user to run `make apply`.
-  `azure-landingzone` always stays manual.
-  `github-repos` uses `cd-terraform` like the rest, as a separate privileged
-  identity (see docs/delivery.md).
+  `azure-landingzone`'s `bootstrap` component always stays manual; its other
+  components, and `github-repos`, use `cd-terraform` like the rest, each as a
+  privileged identity in a main-only `apply` environment (see
+  docs/delivery.md).
 - Never delete, archive or rename a repo. Adding a repo means a PR to
   `github-repos` adding a `var.repos` entry in `terraform/terraform.tfvars`.
   After the user applies it, `make sync` picks the repo up.

@@ -63,12 +63,19 @@ Repos with this flow:
   [Identities and permissions](#identities-and-permissions).
 - cloudflare: infra, the `jaywithers.uk` DNS records, applied to Cloudflare,
   not Azure.
+- azure-landingzone: infra, one main-only `apply` environment and no PR plan,
+  like github-repos. cd-terraform has a job per component (management →
+  governance → connectivity → landingzones), chained so a manual run applies
+  in order and stops at the first failure. Each component gets its own
+  `terraform-pending` issue. `bootstrap` (local state) is always `make apply`.
+- terraform-root-aks: infra, in `dev` as the identity the landing zone vends
+  (`uai-aks-dev`), not a `state_consumers` one.
 - template-repo-terraform-root ships a dormant `cd-terraform` that switches
   on once a repo made from it adds `terraform/backends/dev.hcl`.
 
-azure-landingzone and terraform-root-aks have no CD identity, on purpose:
-their applies create role assignments and policy the pipeline identities are
-never granted, so you apply those by hand.
+Two repos log in as identities azure-landingzone creates, not github-repos.
+github-repos' `pipeline_environments` creates their GitHub environments,
+variables and events grant (see [Identities and permissions](#identities-and-permissions)).
 
 ## Smoke test and rollback
 
@@ -327,7 +334,8 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   one fails the plan rather than dropping a grant. github-repos itself reads
   `TF_VAR_OPERATOR` from its `apply` environment, set by hand. A
   local plan needs the same values exported (`gh variable list --env dev`).
-  azure-landingzone, applied by hand, still keeps them in its tfvars.
+  azure-landingzone still keeps them in its tfvars. terraform-root-aks gets
+  them from `pipeline_environments`' `operator_variables`.
 - **No Entra sign-in for users (Container Apps EasyAuth), by decision.** The
   public apps keep their own passcode gate. Tried on gym-log and reverted on
   2026-10-31 (gym-log#118, azure-landingzone#68). Don't propose it again.
@@ -364,6 +372,27 @@ so:
 - **Break-glass:** `make apply` locally still works, for an apply that broke
   the `apply` environment or its identity, or a required check nothing
   reports.
+
+**azure-landingzone applies the same way, as its own identity.**
+`uai-azure-landingzone-apply-dev` (Contributor + User Access Administrator
+on the subscription, Storage Blob Data Contributor on the platform `tfstate`
+container) is federated only to its main-only `apply` environment.
+
+- **Its `bootstrap` component creates and grants it** (`main.pipeline.tf`).
+  bootstrap's state is local and it never runs in CI, so no pipeline apply
+  can remove or re-scope the identity it runs as.
+- **No PR plan,** same as github-repos. PRs run validate, and the real plan
+  is in each component's `terraform-pending` issue.
+- **A fresh subscription is bootstrapped by hand:** `make apply` for every
+  component in order, because the identity doesn't exist until bootstrap has
+  run. After that, cd-terraform takes over.
+
+**Spokes use the identity the landing zone vends.** landingzones creates
+each spoke's resource group, identity, hub grants and state container, and
+federates the identity to the spoke repo's `pull_request`, `main` and
+`environment:dev` subjects. github-repos' `pipeline_environments` creates
+that repo's `dev` environment from the identity's name. terraform-root-aks
+still issues readable OIDC subjects, not the immutable form.
 
 ## Traps found the hard way
 
