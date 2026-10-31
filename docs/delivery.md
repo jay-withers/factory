@@ -51,15 +51,21 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
   (it comes back on Terraform's placeholder image).
 - **Only dev** is ever applied or deployed.
 
-Repos with this flow: repo-agent, gym-log, finances, career, security-testing
-(app + infra); observability (Grafana; app + infra, with a smoke test of its
-own because Grafana can't serve the shared `/healthz`); azure-container-apps (infra); azure-support-agent (infra, with
-the image version in Terraform, so a Renovate image bump is an infra change);
-market-agent (app + infra; an apply that recreates its dashboard certificate
-on `cae-platform-dev` runs locally); github-repos (infra, one main-only environment
-and no PR plan: see [Identities and permissions](#identities-and-permissions)); cloudflare (infra: the `jaywithers.uk`
-DNS records, applied to Cloudflare, not Azure). template-repo-terraform-root ships a dormant `cd-terraform`
-that switches on once a repo made from it adds `terraform/backends/dev.hcl`.
+Repos with this flow:
+
+- repo-agent, gym-log, finances, career, security-testing: app + infra.
+- observability: Grafana, app + infra, with a smoke test of its own because
+  Grafana can't serve the shared `/healthz`.
+- market-agent: app + infra. An apply that recreates its dashboard
+  certificate on `cae-platform-dev` runs locally.
+- azure-container-apps: infra.
+- github-repos: infra, one main-only environment and no PR plan. See
+  [Identities and permissions](#identities-and-permissions).
+- cloudflare: infra, the `jaywithers.uk` DNS records, applied to Cloudflare,
+  not Azure.
+- template-repo-terraform-root ships a dormant `cd-terraform` that switches
+  on once a repo made from it adds `terraform/backends/dev.hcl`.
+
 azure-landingzone and terraform-root-aks have no CD identity, on purpose:
 their applies create role assignments and policy the pipeline identities are
 never granted, so you apply those by hand.
@@ -95,8 +101,7 @@ proves each deploy, for any repo whose Makefile has a `smoke` target:
 
 Repos with it: gym-log, finances, career, market-agent (apps + jobs);
 repo-agent, security-testing (jobs). `scripts/smoke.sh` is shared verbatim
-between them, so change it in all six. azure-support-agent's image ships
-through Terraform, so it has none.
+between them, so change it in all six.
 
 - **Keep `version` in `/healthz`.** Without it the check falls back to
   "the latest ready revision runs the image", a weaker test that exists only
@@ -117,8 +122,9 @@ through Terraform, so it has none.
 Every run of `container-apps-deploy.yml` (workflows v1.16.0+) ends by writing
 one row to `Deployments_CL` in the platform's Log Analytics workspace, through
 the Logs Ingestion API: repo, app, version and previous version, outcome
-(`success`, `untested`, `rolled_back`, `failed`), `renovate`, `manual` (a person's change, including a held release run by
-hand) or `redeploy` trigger, commit, run URL and lead time. It runs whatever the outcome, after
+(`success`, `untested`, `rolled_back`, `failed`), `renovate`, `manual` (a
+person's change, including a held release run by hand) or `redeploy`
+trigger, commit, run URL and lead time. It runs whatever the outcome, after
 the `deploy-failed` issue step, so a failed post turns the run red without
 reading as a failed deploy.
 
@@ -247,12 +253,13 @@ github-repos.
 
 Shared preset: [jay-withers/renovate](https://github.com/jay-withers/renovate).
 It auto-merges everything, majors included, once required checks pass, in a
-batch on Mondays, and only for releases at least 3 days old. What a merged update then does:
+batch on Mondays, and only for releases at least 3 days old. What a merged
+update then does:
 
 | Update | After auto-merge |
 | --- | --- |
 | Python deps (`uv.lock`), base-image digest | build + deploy; build + `deploy-pending` if a package rose a major (a minor, below 1.0) |
-| Terraform providers, `.terraform-version`, azure-support-agent image | plan; a `terraform-pending` issue if it changes anything, applied when you run cd-terraform |
+| Terraform providers, `.terraform-version` | plan; a `terraform-pending` issue if it changes anything, applied when you run cd-terraform |
 | GitHub Actions, pre-commit hooks, shared workflow pins | tag only |
 | Python base-image **minor** (3.14 → 3.15) | never auto-merged; review it |
 
@@ -302,8 +309,8 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   Based Access Control Administrator** on each group, conditioned to exclude
   Owner, User Access Administrator and RBAC Administrator (Microsoft's "Allow
   most roles, but don't allow others to assign roles" example). Those apply in
-  CD (first proved by gym-log#106 on 2026-10-29). The pipeline can't grant or remove any of the three, and can't create a
-  custom role to get round it.
+  CD (first proved by gym-log#106 on 2026-10-29). The pipeline can't grant
+  or remove any of the three, and can't create a custom role to get round it.
 - **Not granted: role assignments anywhere else.** A grant outside the repo's
   own group (observability's Log Analytics Reader on the platform workspace,
   security-testing's subscription Reader), or any grant in a repo still on
@@ -365,7 +372,8 @@ so:
   on every CD apply (and fail). Grant them to explicit object IDs in
   `environments/dev.tfvars` (`key_vault_administrator_object_ids`).
 - **Terraform-managed Key Vault secrets** need data-plane access just to plan.
-  azure-support-agent grants its pipeline identity Secrets Officer for this.
+  A repo that manages them must grant its pipeline identity Key Vault
+  Secrets Officer on the vault.
 - **Managed-certificate custom domains:** after `make bind-domain` the domain
   is `SniEnabled`. Without
   `ignore_changes = [certificate_binding_type, container_app_environment_certificate_id]`

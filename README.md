@@ -39,10 +39,12 @@ CATALOG.md                    generated repo list, imported by CLAUDE.md
   checks. Claude merges once they're all green (squash, never bypassing the
   ruleset); `terraform apply` stays with you: `.claude/settings.json` denies
   it, and `CLAUDE.md` makes it a hard rule.
-- **After merge.** Apps and infrastructure deploy to dev on their own:
-  `cd-publish` builds and deploys the image, and `cd-terraform` applies once a
-  plan's PR has been approved. [docs/delivery.md](docs/delivery.md) covers the
-  whole flow, the approvals, the permissions and the traps.
+- **After merge.** `cd-publish` builds every app image and deploys routine
+  Renovate releases to dev on its own. Your own changes and majors open a
+  `deploy-pending` issue instead. `cd-terraform` only plans: a plan with
+  changes opens a `terraform-pending` issue, and you apply it with Run
+  workflow. [docs/delivery.md](docs/delivery.md) covers the whole flow, the
+  approvals, the permissions and the traps.
 - **Local runs.** The container uses the host's Docker, and app repos expose
   `make run` / `make test`, so Claude can run and smoke-test a change before
   opening the PR.
@@ -51,6 +53,7 @@ CATALOG.md                    generated repo list, imported by CLAUDE.md
 
 ```bash
 make install           # install pre-commit hooks (run once after cloning)
+make login             # log gh in to GitHub if it isn't already, then sync
 make lint              # run all pre-commit hooks against every file
 make sync              # clone/fast-forward every repo, regenerate CATALOG.md
 make task REPO=x BRANCH=feat/y   # create worktrees/x--feat-y, print its path
@@ -60,9 +63,6 @@ make clean-worktrees   # remove worktrees whose PR is merged or closed
 
 ## Known gaps
 
-- The `dev-containers/terraform` image has Python 3.12 but no `pip`/`uv`, and
-  no `kubectl`/`helm`. Python app repos may not be able to `make test` here
-  until a broader image exists in
-  [dev-containers](https://github.com/jay-withers/dev-containers).
-- App repos don't all have `make run` / `make test` yet. Adding them is the
-  first planned `/sweep`.
+- The `dev-containers/terraform` image has no `kubectl`/`helm`, so
+  terraform-root-aks can't be worked against a cluster from here.
+- market-agent and security-testing have `make test` but no `make run`.
