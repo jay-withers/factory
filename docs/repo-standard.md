@@ -30,7 +30,7 @@ description, topics) are never set in the repo. They live in
 ## Workflows
 
 The name says when it runs: `ci-` on pull requests, `cd-` after merge,
-`schedule-` on a cron. Each one calls a workflow in `jay-withers/workflows`
+`schedule-` on a cron, `manual-` only when someone runs it. Each one calls a workflow in `jay-withers/workflows`
 and holds only what is specific to the repo.
 
 | File | Calls | Required check | Who has it |
@@ -41,6 +41,7 @@ and holds only what is specific to the repo.
 | `ci-terraform.yml` | `terraform.yml` (+ `terraform-deploy.yml` plan) | `terraform / Terraform`, `terraform-plan` | Terraform repos |
 | `cd-terraform.yml` | `terraform-deploy.yml` | | Terraform repos with a backend |
 | `schedule-drift.yml` | `terraform-deploy.yml` with `drift: true` | | Every repo with `cd-terraform` |
+| `manual-terraform-unlock.yml` | `terraform-unlock.yml` | | Every repo with `cd-terraform` |
 | `ci-python.yml` | `python.yml` | `test / Test` | Python apps |
 | `ci-container-build.yml` | `docker.yml` | `container-build` (gate) | Image repos |
 | `cd-publish.yml` | `docker.yml` + `container-apps-deploy.yml` | | Container Apps apps, called from `cd-tag` |
