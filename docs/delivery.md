@@ -323,6 +323,27 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   security-testing's subscription Reader), or any grant in a repo still on
   `create_resource_groups = false`, fails in CD, so run `make apply` locally
   for it.
+- **Delete locks: pipelines create, people remove.** Every consumer has
+  **Resource Lock Creator** (custom role: `locks/read` + `locks/write`, no
+  `delete`) on each of its `deploy_resource_groups`. Each store of record
+  (the resources already carrying `prevent_destroy`: finances', gym-log's and
+  career's storage accounts, and azure-container-apps' shared Postgres) has a
+  `CanNotDelete` `azurerm_management_lock` beside it, as bootstrap's state
+  accounts do. Rule: a new `prevent_destroy` store gets a lock too. Whole
+  resource groups are deliberately **not** locked: a group lock covers every
+  resource inside, so every destroy or replace in CD would fail. To remove a
+  lock, run github-repos' **manual-remove-lock** by hand (it runs in `apply`
+  as the apply identity, whose User Access Administrator includes
+  `locks/delete`; only for groups in `deploy_resource_groups`; dry run by
+  default), then drop the resource. Otherwise the next plan recreates it.
+  While a lock stands, deleting anything inside the resource through ARM fails
+  too (blob containers, databases).
+- **Stuck state lock:** every repo with `cd-terraform` has
+  **manual-terraform-unlock** (workflows' `terraform-unlock.yml`, v1.23.0+).
+  Run it by hand with the lock ID from "Error acquiring the state lock". It
+  uses cd-terraform's own environment and identity, needs no extra grant, and
+  refuses while another Terraform run is in progress. azure-landingzone takes
+  the component as an input, and its `bootstrap` component is unlocked locally.
 - **The operator's identifiers are pipeline variables, not code.**
   github-repos' `var.operator` (Entra object ID, UPN, alert email) sets
   `TF_VAR_KEY_VAULT_ADMINISTRATOR_OBJECT_IDS`, `TF_VAR_ADMINISTRATOR_OBJECT_ID`,
