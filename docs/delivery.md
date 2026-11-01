@@ -143,11 +143,15 @@ reading as a failed deploy.
 - **A repo records nothing until its pin reaches v1.16.0.**
 - **`OpsEvents_CL`** sits beside it: one row per check result, `Kind` and
   `Name` saying what was checked, `Status` `ok`, `failed`, `drifted`,
-  `expiring`, `overdue` or `running`. Five emitters so far:
+  `pending`, `expiring`, `overdue` or `running`. Five emitters so far:
   - **drift**, nightly from `schedule-drift.yml` in every repo with a
     cd-terraform (workflows' `terraform-deploy.yml` with `drift: true`,
     v1.20.0+ so `TF_VAR_*` variables reach the plan). It never applies and
     never opens a `terraform-pending` issue; a drifted root is a green run.
+    From v1.24.0, a plan with changes while the root's `terraform-pending`
+    issue is open records `pending`, not `drifted`: a merged change waiting
+    for its apply (terraform-root-aks while #94 waits). The alert ignores
+    it, since the issue has already emailed.
   - **expiry**, nightly from observability: TLS on every custom domain.
   - **heartbeat**, hourly from observability: one per Container Apps job,
     cadence learned from 30 days of system logs, so adding a job needs no
