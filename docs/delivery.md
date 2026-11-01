@@ -143,8 +143,7 @@ reading as a failed deploy.
 - **A repo records nothing until its pin reaches v1.16.0.**
 - **`OpsEvents_CL`** sits beside it: one row per check result, `Kind` and
   `Name` saying what was checked, `Status` `ok`, `failed`, `drifted`,
-  `expiring` or `overdue`. Three emitters so far (phase 2 of the
-  observability plan):
+  `expiring`, `overdue` or `running`. Five emitters so far:
   - **drift**, nightly from `schedule-drift.yml` in every repo with a
     cd-terraform (workflows' `terraform-deploy.yml` with `drift: true`,
     v1.20.0+ so `TF_VAR_*` variables reach the plan). It never applies and
@@ -153,13 +152,30 @@ reading as a failed deploy.
   - **heartbeat**, hourly from observability: one per Container Apps job,
     cadence learned from 30 days of system logs, so adding a job needs no
     edit anywhere. Plus one for `Deployments_CL` (overdue after 14 days).
+  - **session**, nightly from observability: one per billable category
+    (firewall, running AKS, a VM not deallocated, gateways, a non-Developer
+    bastion, a workload profile), `running` when one is still up. Tag a
+    resource `session-until=YYYY-MM-DD` to keep it overnight on purpose.
+  - **cost-feed**, daily from observability: whether the cost feed below
+    posted.
+- **`Costs_CL`** holds cost per day, resource group and service, which
+  observability's `schedule-costs` reads from Cost Management and re-sends
+  for the last seven days each night. It shows the charge before any credit,
+  i.e. what pay-as-you-go would bill. Grafana's Costs dashboard reads it.
 - **Two platform alerts read it** (azure-container-apps): `ops_event_bad` on
   the latest bad row per check, and `ops_events_silent` when the table is
   quiet for six hours, which catches a dead emitter. A repo whose identity
   lacks `send_events` skips its row with a notice, and so goes unwatched.
 - **Grafana** ([observability](https://github.com/jay-withers/observability))
-  reads both tables. Its Deployments dashboard is the queryable form of this
-  history.
+  reads all three tables. Its Deployments dashboard is the queryable form of
+  this history.
+- **Spend has three alarms, none of which stops anything:** the platform's
+  `ops_event_bad` on a `running` session row, azure-landingzone governance's
+  Cost Management anomaly alert (a day well outside the pattern), and its
+  subscription budget (50/80/100% actual, 100% forecast). The budget is $150,
+  the Visual Studio credit, whose spending limit is the only hard stop today.
+  On a pay-as-you-go subscription there is none, so set `monthly_budget` to a
+  real figure when the credit ends.
 
 ## What waits for you, and how you hear about it
 

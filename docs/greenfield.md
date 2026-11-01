@@ -196,7 +196,8 @@ group), `make db-role`, deploy, `make bind-domain`.
 
 Only when you want the cluster: it costs by the hour. It needs the landing
 zone (step 3), its backend literal from step 1, and its `dev` environment
-from step 6. Then run cd-terraform.
+from step 6. Then run cd-terraform. The nightly session check reports a
+running cluster; tag it `session-until=YYYY-MM-DD` if it is meant to stay.
 
 ## Values tied to the old tenant
 
@@ -208,6 +209,7 @@ from step 6. Then run cd-terraform.
 | `sttfsharedjw` | See step 2 | Only if the old account still exists |
 | `container_apps_default_domain`, `custom_domain_verification_id` | cloudflare `environments/dev.tfvars` | New Container Apps environment |
 | `postgres_fqdn` | observability `environments/dev.tfvars` | New Postgres server |
+| `monthly_budget = 150` | azure-landingzone `governance/terraform.tfvars`; the 150 in observability's Costs dashboard | A subscription without the Visual Studio credit: set what you'd pay, since nothing stops spend there |
 
 These don't change:
 
