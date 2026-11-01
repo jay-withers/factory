@@ -228,7 +228,8 @@ an inventory of outbound connections, nothing blocked yet.
 
 **Privilege alerts.** governance emails on every role assignment and role
 definition write or delete, policy assignment delete, policy exemption write,
-federated credential write and Key Vault delete, whoever the caller. CD's own
+federated credential write, Key Vault delete and management lock delete,
+whoever the caller. CD's own
 grants (a new repo in github-repos, an app's vault grant) email too.
 
 Trivy and CodeQL findings land in each repo's Security tab (code scanning),
