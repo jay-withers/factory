@@ -153,7 +153,7 @@ reading as a failed deploy.
     for its apply (terraform-root-aks while #94 waits). The alert ignores
     it, since the issue has already emailed.
   - **expiry**, nightly from observability: TLS on every custom domain.
-  - **heartbeat**, hourly from observability: one per Container Apps job,
+  - **heartbeat**, daily from observability: one per Container Apps job,
     cadence learned from 30 days of system logs, so adding a job needs no
     edit anywhere. Plus one for `Deployments_CL` (overdue after 14 days).
   - **session**, nightly from observability: one per billable category
@@ -168,7 +168,10 @@ reading as a failed deploy.
   i.e. what pay-as-you-go would bill. Grafana's Costs dashboard reads it.
 - **Two platform alerts read it** (azure-container-apps): `ops_event_bad` on
   the latest bad row per check, and `ops_events_silent` when the table is
-  quiet for six hours, which catches a dead emitter. A repo whose identity
+  quiet for two days, which catches a dead emitter. Two days because every
+  emitter is daily and **GitHub starts scheduled runs 5–8 hours late**
+  (November 2026, every repo), and drops most hourly ones: nothing here
+  should need a schedule to fire on time, or more than daily. A repo whose identity
   lacks `send_events` skips its row with a notice, and so goes unwatched.
 - **Grafana** ([observability](https://github.com/jay-withers/observability))
   reads all three tables. Its Deployments dashboard is the queryable form of
@@ -324,7 +327,7 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   the repo creates its own group with a local first apply and github-repos
   looks it up. Every app repo has moved; only azure-container-apps
   (`rg-platform-dev`) stays on the lookup, deliberately: RBAC Administrator
-  there would reach the shared Postgres, workspace and events rule.
+  there would reach the shared workspace and events rule.
 - **Grants:** Contributor on the repo's own resource group(s); Reader on the
   subscription (plans resolve shared resources); Storage Blob Data Contributor
   on its state container; **Container Apps Environment Joiner** (custom role:
@@ -348,9 +351,8 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   **Resource Lock Creator** (custom role: `locks/read` + `locks/write`, no
   `delete`) on each of its `deploy_resource_groups`. Each store of record
   (the resources already carrying `prevent_destroy`: finances', gym-log's and
-  career's storage accounts, and azure-container-apps' shared Postgres) has a
-  `CanNotDelete` `azurerm_management_lock` beside it, as bootstrap's state
-  accounts do. Rule: a new `prevent_destroy` store gets a lock too. Whole
+  career's storage accounts) has a `CanNotDelete` `azurerm_management_lock`
+  beside it, as bootstrap's state accounts do. Rule: a new `prevent_destroy` store gets a lock too. Whole
   resource groups are deliberately **not** locked: a group lock covers every
   resource inside, so every destroy or replace in CD would fail. To remove a
   lock, run github-repos' **manual-remove-lock** by hand (it runs in `apply`
@@ -367,9 +369,8 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   the component as an input, and its `bootstrap` component is unlocked locally.
 - **The operator's identifiers are pipeline variables, not code.**
   github-repos' `var.operator` (Entra object ID, UPN, alert email) sets
-  `TF_VAR_KEY_VAULT_ADMINISTRATOR_OBJECT_IDS`, `TF_VAR_ADMINISTRATOR_OBJECT_ID`,
-  `TF_VAR_ALERT_EMAIL_ADDRESS` and `TF_VAR_POSTGRES_ENTRA_ADMINISTRATOR` on
-  the `dev` environment of every consumer with `deploy_resource_groups`.
+  `TF_VAR_KEY_VAULT_ADMINISTRATOR_OBJECT_IDS`, `TF_VAR_ADMINISTRATOR_OBJECT_ID`
+  and `TF_VAR_ALERT_EMAIL_ADDRESS` on the `dev` environment of every consumer with `deploy_resource_groups`.
   `terraform-deploy.yml` (v1.20.0+) exports every `TF_VAR_*` Actions variable
   to Terraform, lower-casing the name after the prefix (GitHub stores it
   upper-cased). The consumers declare these variables required, so a missing
