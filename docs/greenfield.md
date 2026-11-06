@@ -20,11 +20,10 @@ tenant until github-repos is applied in the new one.
 None of this comes back from Terraform. Copy it out first:
 
 - **App data in storage accounts:** gym-log's training history (the one
-  account with `prevent_destroy`), plus finances' and career's accounts. Use
-  `azcopy` or download the blobs.
-- **PostgreSQL:** market-agent's own server, and the `grafana` database on
-  the platform's shared server (users and preferences only; dashboards ship
-  in the image). Use `pg_dump`.
+  account with `prevent_destroy`), plus finances', career's and
+  market-agent's accounts (market-agent's DuckDB database is a blob). Use
+  `azcopy` or download the blobs. There is no database server to dump:
+  Grafana keeps only UI preferences, in SQLite on its replica.
 - **Key Vault secret values** for every app (`make secrets` lists the names
   per repo). The new vaults start empty.
 - **Anything in `.env` files** you only have on the old machine.
@@ -141,11 +140,10 @@ and need an `import`.
 ### 5. azure-container-apps
 
 Export the operator variables that step 6 will later set on its `dev`
-environment: `TF_VAR_alert_email_address` and
-`TF_VAR_postgres_entra_administrator`. Then run `make apply ENV=dev`. It
-creates `rg-platform-dev`, the environment, Log Analytics, the shared
-Postgres server and the events rule. Note `make outputs`: you'll need its
-default domain, verification ID and Postgres FQDN below.
+environment: `TF_VAR_alert_email_address`. Then run `make apply ENV=dev`. It
+creates `rg-platform-dev`, the environment, Log Analytics and the events
+rule. Note `make outputs`: you'll need its default domain and verification
+ID below.
 
 ### 6. github-repos, full apply
 
@@ -187,10 +185,8 @@ market-agent (the order doesn't matter between them):
 
 ### 9. observability
 
-Set `postgres_fqdn` in `terraform/environments/dev.tfvars` to step 5's
-Postgres FQDN (the server name has a random suffix). Then follow its README's
-"First-time setup": local `make apply` (the workspace grant is outside its
-group), `make db-role`, deploy, `make bind-domain`.
+Follow its README's "First-time setup": local `make apply` (the workspace
+grant is outside its group), deploy, `make bind-domain`.
 
 ### 10. terraform-root-aks
 
@@ -208,7 +204,6 @@ running cluster; tag it `session-until=YYYY-MM-DD` if it is meant to stay.
 | `sttfstatedev02d6`, `stlzstatedev02d6` | azure-landingzone `*/backend.tf` (×4), terraform-root-aks `backends/dev.hcl` | New subscription (names derived from its ID) |
 | `sttfsharedjw` | See step 2 | Only if the old account still exists |
 | `container_apps_default_domain`, `custom_domain_verification_id` | cloudflare `environments/dev.tfvars` | New Container Apps environment |
-| `postgres_fqdn` | observability `environments/dev.tfvars` | New Postgres server |
 | `monthly_budget = 150` | azure-landingzone `governance/terraform.tfvars`; the 150 in observability's Costs dashboard | A subscription without the Visual Studio credit: set what you'd pay, since nothing stops spend there |
 
 These don't change:
