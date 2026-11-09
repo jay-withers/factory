@@ -1,6 +1,6 @@
 {
   "name": "factory",
-  "image": "ghcr.io/jay-withers/dev-containers/terraform:v0.16.13@sha256:f7c8bca6dab6d3db059285c62879f0357a9594b5cd42aaef319cd9c1c674854f",
+  "image": "ghcr.io/jay-withers/dev-containers/terraform:v0.20.20@sha256:bc4c35a65d68e2a84d0eba4b236db55ee1ae823491ada28b49e74af7567659b7",
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
       "moby": false
