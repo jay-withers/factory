@@ -155,7 +155,9 @@ reading as a failed deploy.
   - **expiry**, nightly from observability: TLS on every custom domain.
   - **heartbeat**, daily from observability: one per Container Apps job,
     cadence learned from 30 days of system logs, so adding a job needs no
-    edit anywhere. Plus one for `Deployments_CL` (overdue after 14 days).
+    edit anywhere. A job Resource Graph no longer lists reads `removed`, not
+    `overdue`, so deleting one needs no edit either. Plus one for
+    `Deployments_CL` (overdue after 14 days).
   - **session**, nightly from observability: one per billable category
     (firewall, running AKS, a VM not deallocated, gateways, a non-Developer
     bastion, a workload profile), `running` when one is still up. Tag a
