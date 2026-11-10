@@ -39,7 +39,8 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
 - **Read [docs/delivery.md](docs/delivery.md) before changing CI/CD,
   identities, required checks or Renovate policy in any repo.** It is the
   estate-wide map: what deploys on merge, the `terraform-pending` and
-  `deploy-pending` issues that wait for the user, `deploy-failed` issues,
+  `deploy-pending` issues that wait for the user, `deploy-failed` and
+  `build-failed` issues,
   which checks must always report, and the Azure permission traps (join on
   the shared environment, "whoever applies" RBAC).
   Keep it current when one of those changes.
