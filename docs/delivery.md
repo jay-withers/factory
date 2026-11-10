@@ -214,9 +214,26 @@ on `main` opens a **`deploy-failed`** issue that @-mentions you. A repeat
 failure comments on it, the next success closes it, and the digest lists it
 while open (`delivery.deploy_failed`).
 
+**A failing build of main opens an issue too.** The Trivy gate only runs when
+something builds, and nothing builds main between merges, so a fix published
+upstream after the last merge first showed up as every Renovate PR failing
+`container-build` for an unrelated reason (security-testing's pyasn1 held five
+PRs for 13 days, November 2026). Every app's `ci-container-build` therefore
+also runs **daily on main** (05:xx UTC, staggered) and by hand, with
+`docker.yml`'s `failure-issue` (workflows v1.25.0+): a failed build or gate
+opens a **`build-failed`** issue that @-mentions you, a repeat comments on it,
+and the next green build closes it. Run `ci-container-build` by hand after a
+fix to close it at once. The digest lists it while open
+(`delivery.build_failed`), above `renovate.blocked_prs`, whose cause it
+usually is. Outside a pull request the `changes` path filter is skipped and
+the build always runs; pull requests behave as before. dev-containers has its
+own `cd-patch-check` instead.
+
 **Stuck Renovate PRs are named.** A Renovate PR that can't merge (a required
-check failing, or a conflict) for a week appears in the digest as
-`renovate.blocked_prs`, by name. Auto-merge never takes those, and every update
+check failing, or a conflict) for 5 days appears in the digest as
+`renovate.blocked_prs`, by name. Five, not seven, because the scan runs Sunday
+18:00 and Monday's batch is 5-6 whole days old then: at seven a blocked batch
+was always missed once and named at 12-13 days. Auto-merge never takes those, and every update
 inside stays unapplied. The lock-file maintenance PRs sat like that for a month,
 freezing CVE fixes.
 
@@ -228,7 +245,7 @@ permission; without it the delivery checks stay silent.
 | What | Where | Blocks |
 | --- | --- | --- |
 | Terraform: Checkov + tflint | pre-commit, locally and in CI | Yes (`pre-commit / Pre-commit`) |
-| Container images: Trivy | shared `docker.yml`, every build | PRs on fixable CRITICAL/HIGH (`container-build`); never a publish |
+| Container images: Trivy | shared `docker.yml`, every build, and daily on main | PRs on fixable CRITICAL/HIGH (`container-build`); never a publish. A failing daily build opens a `build-failed` issue |
 | Code: CodeQL | `ci-codeql`, Python repos | No; alerts in the Security tab |
 | Secrets: gitleaks | pre-commit | Locally, and in CI |
 | Secrets: GitHub secret scanning + push protection | every repo (github-repos `repo_defaults`) | Pushes containing a known secret |
