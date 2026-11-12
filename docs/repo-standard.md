@@ -17,7 +17,8 @@ known.
 | `.pre-commit-config.yaml` | Hooks pinned by SHA, tag as a comment | Base hooks, gitleaks, actionlint, shellcheck, commitlint |
 | `commitlint.config.js` | Conventional Commits | `no-commit-to-branch` blocks commits to `main` |
 | `renovate.json` | Extends `github>jay-withers/renovate` | Never the old `template-renovate` name |
-| `.devcontainer/devcontainer.json` | A `ghcr.io/jay-withers/dev-containers/*` image by tag | Exceptions: dev-containers, toolchain |
+| `mise.toml` | Every developer and CI tool, by exact version | Replaced `.devcontainer/` and `.terraform-version`; set a machine up with toolchain |
+| `.vscode/extensions.json` | Recommended VS Code extensions | |
 | `.github/workflows/` | Thin callers of `jay-withers/workflows`, pinned by SHA | See below |
 
 git-demo is the deliberate exception to all of it: no CI, hooks there to fail

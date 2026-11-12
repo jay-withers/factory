@@ -7,6 +7,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/tasks.json
 
 # Environment / secrets — never commit these; gitleaks (pre-commit and CI)
 # scans every commit as a backstop.

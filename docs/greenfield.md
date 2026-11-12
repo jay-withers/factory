@@ -50,7 +50,7 @@ Terraform state does not need copying: every root starts fresh.
 
 - An Owner on the new subscription, signed in: `az login --tenant <tenant>`
   and `az account set -s <subscription>`. Also `gh auth login` and
-  PowerShell 7 (for step 2). The `dev-containers/terraform` image has all of
+  PowerShell 7 (for step 2). toolchain's `setup.sh` installs all of
   this.
 - Register the resource providers the platform needs. `Microsoft.App`
   fails with `MissingSubscriptionRegistration` otherwise:

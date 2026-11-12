@@ -1,0 +1,15 @@
+{
+  // `make sync` every time this folder is opened, once gh is logged in.
+  // VS Code asks once whether to allow automatic tasks in this folder.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "make sync",
+      "type": "shell",
+      "command": "gh auth status >/dev/null 2>&1 && make sync || echo 'Not logged in to GitHub: run make login'",
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": { "reveal": "silent", "panel": "dedicated", "close": true },
+      "problemMatcher": []
+    }
+  ]
+}
