@@ -59,15 +59,14 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
 
 - From the worktree, use the repo's `make run` (and `make test`). Pass a free
   `PORT=` if another worktree's app is already running. Stop what you start.
-- The container talks to the host's Docker (docker-outside-of-docker), so
-  `docker build` and `docker compose up` work. VS Code forwards the ports.
+- Tools come from mise: jay-withers/toolchain sets a machine up once, and
+  each repo's `mise.toml` pins its own versions (`make install` runs
+  `mise install`). `docker build` and `docker compose up` use the machine's
+  Docker.
 - Secrets live in each worktree's gitignored `.env`, copied from its
   `.env.example`. Credentials come from `az login` / `gh auth login` in this
   container. Never commit an `.env`, and never put a secret in a command line
   or PR.
-- If an app needs its own dev container exactly, run
-  `npx -y @devcontainers/cli up --workspace-folder worktrees/<repo>--<branch>`,
-  or hand that folder to the user to open with "Reopen in Container".
 - If a repo has no `make run`/`make test` yet, work out how it runs from its
   README, and mention that it's missing the targets.
 
@@ -103,9 +102,11 @@ branch here: Conventional Commits (enforced by commitlint), pre-commit hooks
 pinned by SHA (`make lint`), `ci-lint` on PRs (`pre-commit / Pre-commit` is
 the required check), and `cd-tag` tagging releases on merge. The scripts
 behind the Makefile live in `scripts/`. `make` with no target prints help.
-The dev container is the `dev-containers/terraform` image plus
-docker-outside-of-docker. It runs `make install` on create and `make sync` on
-every start, once `gh` is logged in. Until it is, every new terminal runs
-`gh auth login` and `gh auth setup-git` (`scripts/login.sh`, hooked into
-`~/.bashrc`). "Logged in" means the token works, not just that one is stored:
-a revoked token (HTTP 401) prompts again, while an offline terminal stays quiet.
+There is no dev container: `mise.toml` pins the tools and `make install` runs
+`mise install`. `.vscode/extensions.json` recommends the extensions for the
+whole estate, since VS Code reads only the workspace root's file, not the
+copies in `repos/` and `worktrees/`. `.vscode/tasks.json` runs `make sync`
+each time the folder opens, once `gh` is logged in. `make login`
+(`scripts/login.sh`) runs `gh auth login` and `gh auth setup-git`, then
+syncs. "Logged in" means the token works, not just that one is stored: a
+revoked token (HTTP 401) prompts again, while an offline terminal stays quiet.

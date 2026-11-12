@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Make sure gh is logged in. Run from every interactive shell (hooked into
-# ~/.bashrc on container create), so a fresh container asks for a GitHub login
-# in the first terminal you open, points git at that login for github.com,
-# then runs make sync. Does nothing once logged in.
+# Make sure gh is logged in (`make login`): asks for a GitHub login, points
+# git at that login for github.com, then runs make sync. Does nothing once
+# logged in. Safe to hook into ~/.bashrc: it stays quiet in non-interactive
+# shells.
 set -euo pipefail
 
 [[ -t 0 && -t 1 ]] || exit 0

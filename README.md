@@ -6,11 +6,15 @@ in an isolated worktree, linted, tested and (for apps) run locally first.
 
 ## Getting started
 
-1. Open the repo in its dev container (VS Code: **Reopen in Container**).
-2. Run `gh auth login` and, if you'll work on anything Azure-backed,
-   `az login`.
-3. Run `make sync` to clone every repo into `repos/` and write `CATALOG.md`.
-   After this, it runs on every container start.
+1. Set the machine up once with
+   [toolchain](https://github.com/jay-withers/toolchain)'s `setup.sh` (mise
+   and every tool), then run `make install` here.
+2. Run `make login` (`gh auth login`, then a first `make sync` that clones
+   every repo into `repos/` and writes `CATALOG.md`) and, if you'll work on
+   anything Azure-backed, `az login`.
+3. Open the folder in VS Code and install the recommended extensions when it
+   asks. Allow its automatic tasks once, and `make sync` runs every time the
+   folder opens.
 4. Start Claude Code and ask for what you want:
 
    ```text
@@ -45,7 +49,7 @@ CATALOG.md                    generated repo list, imported by CLAUDE.md
   changes opens a `terraform-pending` issue, and you apply it with Run
   workflow. [docs/delivery.md](docs/delivery.md) covers the whole flow, the
   approvals, the permissions and the traps.
-- **Local runs.** The container uses the host's Docker, and app repos expose
+- **Local runs.** App repos expose
   `make run` / `make test`, so Claude can run and smoke-test a change before
   opening the PR.
 
@@ -63,6 +67,4 @@ make clean-worktrees   # remove worktrees whose PR is merged or closed
 
 ## Known gaps
 
-- The `dev-containers/terraform` image has no `kubectl`/`helm`, so
-  terraform-root-aks can't be worked against a cluster from here.
 - market-agent and security-testing have `make test` but no `make run`.

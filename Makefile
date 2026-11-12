@@ -7,6 +7,7 @@ help: ## Show this help
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install pre-commit hooks (run once after cloning)
+	mise install
 	pre-commit install
 	pre-commit install --hook-type commit-msg
 
