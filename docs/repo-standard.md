@@ -92,11 +92,16 @@ scripts/check-tf-standards.sh  # shared verbatim; re-copy, never edit
 
 `src/`, `tests/`, `pyproject.toml` + `uv.lock`, `Dockerfile` (built on
 dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
-`build`, `deploy`, `deployed-tag`, `smoke`, `secrets`, `logs`, `url`.
+`typecheck`, `build`, `deploy`, `deployed-tag`, `smoke`, `secrets`, `logs`, `url`.
 
 - **`scripts/smoke.sh` is shared verbatim** between career, finances,
   gym-log, market-agent, repo-agent and security-testing. observability has
   its own.
+- **mypy, configured in `pyproject.toml`** (`check_untyped_defs`, the pydantic
+  plugin), pinned in the dev dependencies and run by `make typecheck`.
+  `ci-python.yml` passes `typecheck: mypy` and `diff-coverage: "80"`
+  (workflows v1.28.0+): at least 80% of the lines a PR changes must be run by
+  a test. Total coverage is reported, never gated.
 - **`/healthz` reports `version`**, and **`selfcheck`** is side-effect free
   and checks every secret a job reads.
 - **Create apps on `dev-containers/placeholder:latest`** with the image under

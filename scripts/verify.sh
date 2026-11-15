@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Verify a worktree before it ships: run its lint and tests, then record the
+# Verify a worktree before it ships: run its lint, type check (where it has
+# `make typecheck`) and tests, then record the
 # exact file tree that passed. Run it from the worktree (`../../scripts/verify.sh`)
 # or pass the path (`make verify DIR=worktrees/<name>`).
 #
@@ -26,6 +27,11 @@ if has_target lint; then
   make lint
 else
   pre-commit run --all-files
+fi
+
+if has_target typecheck; then
+  echo "==> typecheck"
+  make typecheck
 fi
 
 if has_target test; then
