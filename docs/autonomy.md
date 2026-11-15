@@ -13,6 +13,9 @@ user's attention is kept for decisions only they can make.
   the `terraform-pending` issue and runs `cd-terraform`.
 - **App releases from a person are held** (`deploy-pending`), and every
   deploy is smoke-tested with rollback.
+- **Nothing leaves a worktree unverified.** A hook blocks pushes and PRs
+  until `scripts/verify.sh` (lint + tests) has passed on exactly that code,
+  and the skills review every diff before it's committed.
 - **`.claude/settings.json` denies** the hard-rule commands (applies,
   destroys, force-pushes, admin merges).
 - **Privilege alerts email the user** on any role, policy or federated

@@ -49,6 +49,10 @@ CATALOG.md                    generated repo list, imported by CLAUDE.md
   changes opens a `terraform-pending` issue, and you apply it with Run
   workflow. [docs/delivery.md](docs/delivery.md) covers the whole flow, the
   approvals, the permissions and the traps.
+- **Quality gate.** Before a change leaves its worktree, Claude reviews the
+  diff with the `code-review` skill and runs `scripts/verify.sh` (lint +
+  tests). A Claude Code hook refuses `git push` and `gh pr create` unless the
+  commit being pushed is exactly what passed.
 - **Local runs.** App repos expose
   `make run` / `make test`, so Claude can run and smoke-test a change before
   opening the PR.
@@ -61,6 +65,7 @@ make login             # log gh in to GitHub if it isn't already, then sync
 make lint              # run all pre-commit hooks against every file
 make sync              # clone/fast-forward every repo, regenerate CATALOG.md
 make task REPO=x BRANCH=feat/y   # create worktrees/x--feat-y, print its path
+make verify DIR=worktrees/x--feat-y  # lint + test it; pushes are blocked until this passes
 make status            # uncommitted/unpushed work, and every open PR
 make clean-worktrees   # remove worktrees whose PR is merged or closed
 ```
