@@ -1,6 +1,6 @@
 ---
 name: change
-description: Make one change in one jay-withers repository and ship it as a PR - worktree, edit, lint/test/run locally, Conventional Commit, push, open PR, watch checks. Use for any request that targets a single repo.
+description: Make one change in one jay-withers repository and ship it as a PR - worktree, edit with tests, run locally, review the diff, verify, Conventional Commit, push, open PR, watch checks. Use for any request that targets a single repo.
 argument-hint: <repo> <what to change>
 ---
 
@@ -18,25 +18,43 @@ Request: $ARGUMENTS
    editing. Its conventions beat the factory's wherever they differ. For
    anything touching repo settings, status checks or a new repo, read
    `repos/github-repos/terraform/terraform.tfvars` as well.
-4. **Make the change**, matching the surrounding code.
-5. **Verify locally**, from the worktree:
-   - `make lint` (if there's no Makefile target, `pre-commit run --all-files`)
-   - `make test`, if the repo has it
+4. **Make the change**, matching the surrounding code, with tests:
+   - A `fix:` comes with a regression test. Write it first and see it fail
+     for the reported reason, then make it pass.
+   - A `feat:` comes with tests for the new behaviour, not just an existing
+     suite that still passes.
+   - Where the repo has no test suite (most Terraform repos), say so in the
+     report rather than inventing one.
+5. **Check it works**, from the worktree:
+   - Iterate with `make test` (and `make lint`).
    - For an app: `make run` in the background with a free `PORT=`. Smoke-test
-     the thing you changed (curl the endpoint, run the CLI), then stop it.
+     the thing you changed (curl the endpoint, load the page, run the CLI),
+     then stop it.
    - Fix what fails. If something fails for a reason unrelated to the change
-     (for example, a tool missing from the container), say so rather than
+     (for example, a tool missing from the machine), say so rather than
      working around it.
-6. **Commit** with a Conventional Commit message. The pre-commit and
-   commit-msg hooks run. Fix and re-commit if they reject it; never use
-   `--no-verify`.
-7. **Ship**: `git push -u origin <branch>`, then `gh pr create --fill` (or
+6. **Review the diff** before committing: from the worktree, run the
+   `code-review` skill at `medium` on the uncommitted change. Fix every
+   finding that holds up, adding a regression test for each real bug. Any
+   you leave, and why, go in the report.
+7. **Verify and commit.** Run `../../scripts/verify.sh` from the worktree: it
+   runs `make lint` and `make test` and records the exact tree that passed.
+   Then commit with a Conventional Commit message. The pre-commit and
+   commit-msg hooks run; fix and re-commit if they reject it, and never use
+   `--no-verify`. A Claude Code hook blocks `git push` and `gh pr create`
+   unless the commit's tree is the one `verify.sh` passed, so if anything
+   changed after verifying (a hook's fix, a later edit), run it again and
+   commit what it changed (a new commit, never an amend of a pushed one).
+   The same goes for every later push, such as a fix for a failing CI check.
+   Never work round the hook.
+8. **Ship**: `git push -u origin <branch>`, then `gh pr create --fill` (or
    write a short summary body), then `gh pr checks --watch`. Once every
    required check has passed, merge it with `gh pr merge --squash`, unless the
    user asked to leave it open. If the branch is behind main (the rulesets
    require it up to date), `gh pr update-branch` and wait for the checks again.
    Never `--admin`, never round the ruleset.
-8. **Report**: the PR URL, the check results, what you verified locally, and
+9. **Report**: the PR URL, the check results, what you verified locally,
+   review findings you left unfixed, and
    anything the user still has to do: applying a Terraform change (run
    `cd-terraform` by hand, or `make apply` where a repo has no CD), and
    merging if it was left open. Never apply yourself.

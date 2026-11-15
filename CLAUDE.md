@@ -27,9 +27,15 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
 - One repo, one change: use `/change <repo> <request>`. The same change in
   several repos: use `/sweep <request> [repos | topic:<t> | all]`. Both skills
   spell out the workflow. In short: worktree, read that repo's CLAUDE.md,
-  edit, `make lint`/`make test`/`make run` locally, Conventional Commit, push,
-  `gh pr create`, `gh pr checks --watch`, merge once green (unless the user
-  asked to leave it open), report the URL.
+  edit with tests (a fix gets a regression test), `make test`/`make run`
+  locally, review the diff with the `code-review` skill, `../../scripts/verify.sh`,
+  Conventional Commit, push, `gh pr create`, `gh pr checks --watch`, merge
+  once green (unless the user asked to leave it open), report the URL.
+- **Nothing ships from a worktree unverified.** A `PreToolUse` hook in
+  `.claude/settings.json` (`scripts/hooks/require-verified.py`) blocks
+  `git push` and `gh pr create` under `worktrees/` unless HEAD's tree is the
+  one `scripts/verify.sh` last passed (lint + tests). Changed something since?
+  Verify again. Never work round it.
 - **Each repo's own CLAUDE.md and README override this file.** Claude Code
   loads a nested CLAUDE.md when you work on files under it, but read it
   explicitly before your first edit in a repo anyway.

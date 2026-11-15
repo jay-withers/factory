@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install login lint sync task status clean-worktrees
+.PHONY: help install login lint sync task verify status clean-worktrees
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -23,6 +23,10 @@ sync: ## Clone every repo into repos/, fast-forward clean ones, regenerate CATAL
 task: ## Start a task: make task REPO=<repo> BRANCH=<branch> (prints the worktree path)
 	@test -n "$(REPO)" -a -n "$(BRANCH)" || { echo "usage: make task REPO=<repo> BRANCH=<branch>"; exit 2; }
 	@scripts/task.sh "$(REPO)" "$(BRANCH)"
+
+verify: ## Lint + test a worktree and record it as fit to push: make verify DIR=worktrees/<name>
+	@test -n "$(DIR)" || { echo "usage: make verify DIR=worktrees/<name>"; exit 2; }
+	@scripts/verify.sh "$(DIR)"
 
 status: ## List uncommitted/unpushed work and every open PR
 	@scripts/status.sh

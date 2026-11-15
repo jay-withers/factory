@@ -20,7 +20,10 @@ Request: $ARGUMENTS
 3. **Roll out** to the rest, one worktree each (`make task`), using the same
    branch name and the same PR title everywhere. Adapt to each repo's own
    conventions rather than pasting identical diffs. Skip local `make run` unless
-   the change touches app code.
+   the change touches app code. Every repo still runs `../../scripts/verify.sh`
+   before its push (the hook enforces it). Run the `code-review` skill on each
+   repo's diff too, except where the diff is the pilot's change applied
+   mechanically: then the pilot's review covers it, and the report says so.
 4. **Watch every PR's checks.** A failure in one repo doesn't block the
    others. Fix it in that repo's worktree, or report it. Merge each PR
    (`gh pr merge --squash`) once all its required checks pass, unless the user
