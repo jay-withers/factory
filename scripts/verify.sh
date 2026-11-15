@@ -23,10 +23,15 @@ cd "$top"
 has_target() { make -n "$1" >/dev/null 2>&1; }
 
 echo "==> lint ($top)"
-if has_target lint; then
-  make lint
-else
+# pre-commit always, where the repo has it: it's what the commit hook and CI's
+# pre-commit check run, and some repos' `make lint` is something else entirely
+# (workflows' runs only actionlint). `make lint` as well when it does more than
+# pre-commit, so neither half is skipped.
+if [[ -f .pre-commit-config.yaml ]]; then
   pre-commit run --all-files
+fi
+if has_target lint && ! make -n lint 2>/dev/null | grep -q "pre-commit run"; then
+  make lint
 fi
 
 if has_target typecheck; then
