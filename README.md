@@ -14,7 +14,9 @@ in an isolated worktree, linted, tested and (for apps) run locally first.
    anything Azure-backed, `az login`.
 3. Open the folder in VS Code and install the recommended extensions when it
    asks. Allow its automatic tasks once, and `make sync` runs every time the
-   folder opens.
+   folder opens. Claude Code syncs too: a `SessionStart` hook
+   (`scripts/hooks/session-sync.sh`) runs it whenever a session starts,
+   resumes or is cleared, and reports any clone it had to skip.
 4. Start Claude Code and ask for what you want:
 
    ```text
@@ -50,8 +52,8 @@ CATALOG.md                    generated repo list, imported by CLAUDE.md
   workflow. [docs/delivery.md](docs/delivery.md) covers the whole flow, the
   approvals, the permissions and the traps.
 - **Quality gate.** Before a change leaves its worktree, Claude reviews the
-  diff with the `code-review` skill and runs `scripts/verify.sh` (lint +
-  tests). A Claude Code hook refuses `git push` and `gh pr create` unless the
+  diff with the `code-review` skill and runs `scripts/verify.sh` (pre-commit,
+  `make lint`, `make typecheck` where the repo has it, and `make test`). A Claude Code hook refuses `git push` and `gh pr create` unless the
   commit being pushed is exactly what passed.
 - **Local runs.** App repos expose
   `make run` / `make test`, so Claude can run and smoke-test a change before
@@ -60,7 +62,7 @@ CATALOG.md                    generated repo list, imported by CLAUDE.md
 ## Commands
 
 ```bash
-make install           # install pre-commit hooks (run once after cloning)
+make install           # mise install, then the pre-commit hooks (run once after cloning)
 make login             # log gh in to GitHub if it isn't already, then sync
 make lint              # run all pre-commit hooks against every file
 make sync              # clone/fast-forward every repo, regenerate CATALOG.md
@@ -69,6 +71,27 @@ make verify DIR=worktrees/x--feat-y  # lint + test it; pushes are blocked until 
 make status            # uncommitted/unpushed work, and every open PR
 make clean-worktrees   # remove worktrees whose PR is merged or closed
 ```
+
+## The docs
+
+- [docs/delivery.md](docs/delivery.md): what deploys on merge, the
+  `terraform-pending`, `deploy-pending`, `deploy-failed` and `build-failed`
+  issues, required checks, and the Azure permission traps.
+- [docs/autonomy.md](docs/autonomy.md): when Claude asks and when it just
+  proceeds.
+- [docs/repo-standard.md](docs/repo-standard.md): the shape every repo should
+  have, to build new ones to and to tell a deliberate exception from drift.
+- [docs/greenfield.md](docs/greenfield.md): the apply order for rebuilding the
+  estate in a new tenant, with every tenant-bound literal.
+- [CLAUDE.md](CLAUDE.md): the rules Claude works by, including the hard rules
+  that stay human (applies, force-pushes, deleting repos).
+
+## This repo's own CI
+
+Built on [template-repo-base](https://github.com/jay-withers/template-repo-base).
+`ci-lint` runs every pre-commit hook (`pre-commit / Pre-commit`, the required
+check), `ci-codeql` scans the workflows, and `cd-tag` tags a release on every
+merge. Changes here go through a branch and PR like any other repo.
 
 ## Known gaps
 
