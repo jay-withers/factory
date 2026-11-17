@@ -124,6 +124,30 @@ between them, so change it in all six.
   one replica and one user, the gain over rolling back is seconds of downtime,
   against `revision_mode = "Multiple"` and traffic management in every app.
 
+## Backups
+
+gym-log, finances and career each run a nightly **backup job**
+(`<app> backup`: 02:30, 02:45 and 03:00 UTC) that copies its documents, exactly
+as stored, to the cloudflare repo's R2 bucket `jw-app-backups`, off Azure
+entirely. Each copy is age-encrypted to the owner's offline key and to a
+**drill key** in the app's Key Vault, then downloaded, decrypted with the drill
+key, compared byte for byte and parsed, so every run proves its copy restores.
+`daily/<app>/<timestamp>/` is kept 30 days and `monthly/<app>/<yyyy-mm>/` a
+year, by R2 lifecycle rules in the cloudflare repo; nothing in the apps deletes.
+
+- **A failed run** is a failed job, so the platform's job-failure alert fires.
+  Its log names each problem as `backup: FAIL ...`.
+- **Each app needs three Key Vault secrets before the first release with the
+  job deploys:** `R2-ACCESS-KEY-ID`, `R2-SECRET-ACCESS-KEY` (one R2 token,
+  Object Read & Write on that bucket only, shared by the three apps) and its
+  own `BACKUP-AGE-DRILL-KEY`. The backup job's `selfcheck` checks all three, so
+  a missing one fails the smoke test and rolls the release back (finances'
+  first deploy did exactly that).
+- **The owner's private key never goes to Azure, CI or a repository.** Losing
+  it loses nothing but the ability to restore without the drill key.
+- The three `backup.py` copies are kept in step until the shared app library
+  takes them over: fix a bug in all of them.
+
 ## Deploy history
 
 Every run of `container-apps-deploy.yml` (workflows v1.16.0+) ends by writing
