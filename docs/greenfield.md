@@ -30,6 +30,11 @@ None of this comes back from Terraform. Copy it out first:
 
 Terraform state does not need copying: every root starts fresh.
 
+If the old tenant is already gone, gym-log's, finances' and career's documents
+are still in Cloudflare R2 (`jw-app-backups`, see delivery.md's Backups), at
+most a day old and encrypted to the owner's offline age key. Each app's README
+("Backups") says how to restore one.
+
 ## Order
 
 ```text
@@ -176,9 +181,14 @@ market-agent (the order doesn't matter between them):
    Grants outside the app's own resource group are a local `make apply`
    (security-testing's subscription Reader, for example). The repo's README
    says which.
-2. `make secrets`, and set the values saved before the move.
+2. `make secrets`, and set the values saved before the move. For gym-log,
+   finances and career that includes the R2 token's two halves, and a **new**
+   drill key generated straight into the vault (`make secrets` prints the
+   command); the old drill key isn't needed, since the owner's key decrypts
+   every copy.
 3. Restore data: gym-log, finances and career blobs into their new storage
-   accounts, and market-agent's database into its new server.
+   accounts (from the copies taken before the move, or from R2), and
+   market-agent's database into its new server.
 4. Run `cd-publish` with the latest release tag to replace the placeholder.
    The smoke test proves it.
 5. For a custom domain, run `make bind-domain` once cloudflare is applied.
@@ -213,6 +223,11 @@ These don't change:
 - The built-in role and policy definition IDs in governance and github-repos'
   `locals.tf`. They're the same in every tenant.
 - Alert email addresses, the Cloudflare zone and token, and GitHub PATs.
+- The backup bucket and its endpoint
+  (`https://4984ee9d….eu.r2.cloudflarestorage.com`, the Cloudflare account ID)
+  and the owner's age public key, in gym-log's, finances' and career's
+  `environments/dev.tfvars`. They belong to the Cloudflare account and to the
+  owner, not to the tenant.
 
 Keep this table current: a new literal that names a tenant, subscription,
 object ID or globally unique Azure name belongs here, or better, behind a
