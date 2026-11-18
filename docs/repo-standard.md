@@ -121,8 +121,13 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   (workflows v1.30.0+), never a copy: `make smoke` fetches it at the commit
   `cd-publish.yml` pins `container-apps-deploy.yml` to, so CI and a local run
   agree and Renovate's pin bump moves it. The README of workflows has the
-  Makefile snippet. Web apps behind the appkit gate set `browser-check: true`
-  in `cd-publish.yml` (career, finances, gym-log).
+  Makefile snippet. A web app whose `/` answers 200 unauthenticated (the
+  login page or a redirect to it) sets `browser-check: true` in
+  `cd-publish.yml`: career, finances, gym-log and observability.
+  market-agent's dashboard is the deliberate exception: its nginx gate
+  answers `/` with the login form as a 401 body so deep links survive, which
+  the check reads as a failure. Its own Playwright suite covers it in CI.
+  Renovate keeps the check's Playwright pin current (workflows' renovate.json).
 - **mypy, configured in `pyproject.toml`** (`check_untyped_defs`, the pydantic
   plugin), pinned in the dev dependencies and run by `make typecheck`.
   `ci-python.yml` passes `typecheck: mypy` and `diff-coverage: "80"`

@@ -102,7 +102,7 @@ proves each deploy, for any repo whose Makefile has a `smoke` target:
    reaches its storage or database, then exits. It never emails, calls an LLM,
    trades or scans. Every job's run starts before any is awaited (10 minutes
    at most). With `browser-check: true` (workflows v1.30.0+; career,
-   finances, gym-log) it also loads each app's `/` in Chromium once `/readyz`
+   finances, gym-log, observability) it also loads each app's `/` in Chromium once `/readyz`
    passes, which is the login page, unauthenticated: anything but a 200, or
    any console error (a CSP block is one), fails. The workflow installs
    Chromium before deploying, so a CDN blip fails the run without touching
