@@ -54,8 +54,9 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
 Repos with this flow:
 
 - repo-agent, gym-log, finances, career, security-testing: app + infra.
-- observability: Grafana, app + infra, with a smoke test of its own because
-  Grafana can't serve the shared `/healthz`.
+- observability: obsview (its dashboards app, which replaced Grafana), app +
+  infra. Its `make deploy` sets the whole env with `--replace-env-vars`, so
+  the cutover from Grafana is: apply, then deploy.
 - market-agent: app + infra. An apply that recreates its dashboard
   certificate on `cae-platform-dev` runs locally.
 - azure-container-apps: infra.
@@ -106,9 +107,10 @@ proves each deploy, for any repo whose Makefile has a `smoke` target:
    already run here. The `deploy-failed` issue says whether
    the rollback held.
 
-Repos with it: gym-log, finances, career, market-agent (apps + jobs);
-repo-agent, security-testing (jobs). `scripts/smoke.sh` is shared verbatim
-between them, so change it in all six.
+Repos with it: gym-log, finances, career, market-agent, observability
+(apps, most with jobs); repo-agent, security-testing (jobs).
+`scripts/smoke.sh` is shared verbatim between them, so change it in all
+seven.
 
 - **Keep `version` in `/healthz`.** Without it the check falls back to
   "the latest ready revision runs the image", a weaker test that exists only
@@ -191,7 +193,7 @@ reading as a failed deploy.
 - **`Costs_CL`** holds cost per day, resource group and service, which
   observability's `schedule-costs` reads from Cost Management and re-sends
   for the last seven days each night. It shows the charge before any credit,
-  i.e. what pay-as-you-go would bill. Grafana's Costs dashboard reads it.
+  i.e. what pay-as-you-go would bill. obsview's Costs view reads it.
 - **Two platform alerts read it** (azure-container-apps): `ops_event_bad` on
   the latest bad row per check, and `ops_events_silent` when the table is
   quiet for two days, which catches a dead emitter. Two days because every
@@ -199,9 +201,9 @@ reading as a failed deploy.
   (November 2026, every repo), and drops most hourly ones: nothing here
   should need a schedule to fire on time, or more than daily. A repo whose identity
   lacks `send_events` skips its row with a notice, and so goes unwatched.
-- **Grafana** ([observability](https://github.com/jay-withers/observability))
-  reads all three tables. Its Deployments dashboard is the queryable form of
-  this history.
+- **obsview** ([observability](https://github.com/jay-withers/observability)),
+  which replaced Grafana, reads all three tables. Its Deployments view is
+  the queryable form of this history.
 - **Spend has three alarms, none of which stops anything:** the platform's
   `ops_event_bad` on a `running` session row, azure-landingzone governance's
   Cost Management anomaly alert (a day well outside the pattern), and its
