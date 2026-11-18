@@ -148,8 +148,9 @@ year, by R2 lifecycle rules in the cloudflare repo; nothing in the apps deletes.
   first deploy did exactly that).
 - **The owner's private key never goes to Azure, CI or a repository.** Losing
   it loses nothing but the ability to restore without the drill key.
-- The three `backup.py` copies are kept in step until the shared app library
-  takes them over: fix a bug in all of them.
+- The job is appkit's `appkit.backup`. Each app's `backup.py` only declares
+  its documents, so a fix goes in appkit and reaches every app on its next
+  appkit bump.
 
 ## Deploy history
 
