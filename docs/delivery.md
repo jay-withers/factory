@@ -346,7 +346,8 @@ update then does:
 | Python deps (`uv.lock`), base-image digest | build + deploy; build + `deploy-pending` if a package rose a major (a minor, below 1.0) |
 | Terraform providers, `.terraform-version` | plan; a `terraform-pending` issue if it changes anything, applied when you run cd-terraform |
 | GitHub Actions, pre-commit hooks, shared workflow pins | tag only |
-| Python base-image **minor** (3.14 → 3.15) | never auto-merged; review it |
+| mise tools (`mise.toml` + `mise.lock`) | tag only; CI already ran on the new versions |
+| Python base-image **minor** (3.14 → 3.15), or Python's in `mise.toml` | never auto-merged; review it, and move both together so CI tests the interpreter that ships |
 
 ## Identities and permissions
 

@@ -18,6 +18,7 @@ known.
 | `commitlint.config.js` | Conventional Commits | `no-commit-to-branch` blocks commits to `main` |
 | `renovate.json` | Extends `github>jay-withers/renovate` | Never the old `template-renovate` name |
 | `mise.toml` | Every developer and CI tool, by exact version | Replaced `.devcontainer/` and `.terraform-version`; set a machine up with toolchain |
+| `mise.lock` | Each tool's download URL and checksum, per platform | CI installs `--locked` when it exists; Renovate regenerates it in mise PRs; after a hand edit of `mise.toml`, run `mise lock` |
 | `.vscode/extensions.json` | Recommended VS Code extensions | |
 | `.github/workflows/` | Thin callers of `jay-withers/workflows`, pinned by SHA | See below |
 
