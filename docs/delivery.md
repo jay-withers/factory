@@ -89,7 +89,8 @@ proves each deploy, for any repo whose Makefile has a `smoke` target:
 1. `make deployed-tag` records the tag live now (nothing for Terraform's
    placeholder image).
 2. `make deploy IMAGE_TAG=<tag>`.
-3. `make smoke IMAGE_TAG=<tag>` runs `scripts/smoke.sh`. For an app it checks
+3. `make smoke IMAGE_TAG=<tag>` runs workflows' `scripts/smoke.sh`, fetched
+   at the commit `cd-publish.yml` pins (v1.30.0+). For an app it checks
    that the configured image is right and that `/healthz` on the app's
    default FQDN reports `version == <tag>`, waiting up to 5 minutes for a cold
    start. Then `/readyz` must answer 200. For a job it checks the configured
@@ -100,7 +101,12 @@ proves each deploy, for any repo whose Makefile has a `smoke` target:
    `selfcheck` command loads settings, resolves the secrets the job reads and
    reaches its storage or database, then exits. It never emails, calls an LLM,
    trades or scans. Every job's run starts before any is awaited (10 minutes
-   at most).
+   at most). With `browser-check: true` (workflows v1.30.0+; career,
+   finances, gym-log) it also loads each app's `/` in Chromium once `/readyz`
+   passes, which is the login page, unauthenticated: anything but a 200, or
+   any console error (a CSP block is one), fails. The workflow installs
+   Chromium before deploying, so a CDN blip fails the run without touching
+   dev.
 4. If step 2 or 3 fails, the workflow redeploys and smoke-tests the recorded
    tag with `SMOKE_PHASE=rollback` (workflows v1.14.0+), then **fails the run
    anyway**. On a rollback the selfcheck runs are skipped, and so is `/readyz`
@@ -110,8 +116,9 @@ proves each deploy, for any repo whose Makefile has a `smoke` target:
 
 Repos with it: gym-log, finances, career, market-agent, observability
 (apps, most with jobs); repo-agent, security-testing (jobs).
-`scripts/smoke.sh` is shared verbatim between them, so change it in all
-seven.
+`scripts/smoke.sh` lives in jay-withers/workflows, and each repo's
+`make smoke` fetches it at its pinned commit. Change it there, and it reaches
+each repo with that repo's next pin bump.
 
 - **Keep `version` in `/healthz`.** Without it the check falls back to
   "the latest ready revision runs the image", a weaker test that exists only
