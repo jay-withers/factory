@@ -96,13 +96,26 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
 
 - **Shared Python comes from [appkit](https://github.com/jay-withers/appkit)**,
   never a copy: security headers, the passcode gate, secret resolution, the
-  R2 backup job and the selfcheck loop. Pin it by tag
-  (`appkit[azure,backup] @ git+https://github.com/jay-withers/appkit@vX.Y.Z`,
-  with hatchling's `allow-direct-references`) and bump it by hand with
-  `uv lock`. The builder needs dev-containers v0.22.0+, which has git. A fix
-  to one of those goes in appkit with its regression test. career, finances
-  and gym-log use it; market-agent, repo-agent and security-testing still copy
-  `settings.py`'s secret resolution.
+  R2 backup job, the selfcheck loop and the browser-test helpers. Pin it by
+  tag in `[tool.uv.sources]`
+  (`appkit = { git = "https://github.com/jay-withers/appkit", tag = "vX.Y.Z" }`,
+  with `"appkit[...]"` in `dependencies`), never as a PEP 508
+  `appkit @ git+https://...` reference: Renovate bumps a uv git source's tag
+  (running `uv lock`) but skips a direct reference. Take only the extras you
+  use: `web` (headers, passcode), `azure` (keyvault), `backup`, and `e2e` in
+  the dev extra. The builder needs dev-containers v0.22.0+, which has git. A
+  fix to one of those goes in appkit with its regression test. career,
+  finances, gym-log, market-agent and repo-agent use it. security-testing is
+  the deliberate exception: it runs on the ZAP image's Python 3.11 (appkit
+  needs 3.12+), and its secret lookup is one env-then-vault helper.
+- **Web apps have browser tests in `tests/e2e/`** (Playwright, through
+  `appkit.testing`): the real app on a free port against seeded local data,
+  covering the passcode gate, every screen, and each main write checked after
+  a reload, with an autouse check that fails on any console error (a CSP
+  block is one). `ci-python.yml` passes `playwright: true` (workflows
+  v1.29.0+), so they run inside `test / Test` with no new required check.
+  They skip locally without Chromium and fail under CI; `make e2e` installs
+  it. career, finances and gym-log have them.
 - **`scripts/smoke.sh` is shared verbatim** between career, finances,
   gym-log, market-agent, repo-agent and security-testing. observability has
   its own.
