@@ -94,6 +94,15 @@ scripts/check-tf-standards.sh  # shared verbatim; re-copy, never edit
 dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
 `typecheck`, `build`, `deploy`, `deployed-tag`, `smoke`, `secrets`, `logs`, `url`.
 
+- **Shared Python comes from [appkit](https://github.com/jay-withers/appkit)**,
+  never a copy: security headers, the passcode gate, secret resolution, the
+  R2 backup job and the selfcheck loop. Pin it by tag
+  (`appkit[azure,backup] @ git+https://github.com/jay-withers/appkit@vX.Y.Z`,
+  with hatchling's `allow-direct-references`) and bump it by hand with
+  `uv lock`. The builder needs dev-containers v0.22.0+, which has git. A fix
+  to one of those goes in appkit with its regression test. career, finances
+  and gym-log use it; market-agent, repo-agent and security-testing still copy
+  `settings.py`'s secret resolution.
 - **`scripts/smoke.sh` is shared verbatim** between career, finances,
   gym-log, market-agent, repo-agent and security-testing. observability has
   its own.
