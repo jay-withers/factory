@@ -55,8 +55,9 @@ Repos with this flow:
 
 - repo-agent, gym-log, finances, career, security-testing: app + infra.
 - observability: obsview (its dashboards app, which replaced Grafana), app +
-  infra. Its `make deploy` sets the whole env with `--replace-env-vars`, so
-  the cutover from Grafana is: apply, then deploy.
+  infra. Its `make deploy` sets the whole env with `--replace-env-vars`, so a
+  container app secret leaves its env (deploy) before Terraform removes it
+  (apply).
 - market-agent: app + infra. An apply that recreates its dashboard
   certificate on `cae-platform-dev` runs locally.
 - azure-container-apps: infra.
