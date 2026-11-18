@@ -95,14 +95,15 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
 `typecheck`, `build`, `deploy`, `deployed-tag`, `smoke`, `secrets`, `logs`, `url`.
 
 - **Shared Python comes from [appkit](https://github.com/jay-withers/appkit)**,
-  never a copy: security headers, the passcode gate, secret resolution, the
-  R2 backup job, the selfcheck loop and the browser-test helpers. Pin it by
+  never a copy: security headers, `/healthz` and `/readyz`, the passcode
+  gate, secret resolution, the R2 backup job, the selfcheck loop and the
+  browser-test helpers. Pin it by
   tag in `[tool.uv.sources]`
   (`appkit = { git = "https://github.com/jay-withers/appkit", tag = "vX.Y.Z" }`,
   with `"appkit[...]"` in `dependencies`), never as a PEP 508
   `appkit @ git+https://...` reference: Renovate bumps a uv git source's tag
   (running `uv lock`) but skips a direct reference. Take only the extras you
-  use: `web` (headers, passcode), `azure` (keyvault), `backup`, and `e2e` in
+  use: `web` (headers, health, passcode), `azure` (keyvault), `backup`, and `e2e` in
   the dev extra. The builder needs dev-containers v0.22.0+, which has git. A
   fix to one of those goes in appkit with its regression test. career,
   finances, gym-log, market-agent and repo-agent use it. security-testing is
@@ -116,9 +117,12 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   v1.29.0+), so they run inside `test / Test` with no new required check.
   They skip locally without Chromium and fail under CI; `make e2e` installs
   it. career, finances and gym-log have them.
-- **`scripts/smoke.sh` is shared verbatim** between career, finances,
-  gym-log, market-agent, repo-agent and security-testing. observability has
-  its own.
+- **The smoke test is jay-withers/workflows' `scripts/smoke.sh`**
+  (workflows v1.30.0+), never a copy: `make smoke` fetches it at the commit
+  `cd-publish.yml` pins `container-apps-deploy.yml` to, so CI and a local run
+  agree and Renovate's pin bump moves it. The README of workflows has the
+  Makefile snippet. Web apps behind the appkit gate set `browser-check: true`
+  in `cd-publish.yml` (career, finances, gym-log).
 - **mypy, configured in `pyproject.toml`** (`check_untyped_defs`, the pydantic
   plugin), pinned in the dev dependencies and run by `make typecheck`.
   `ci-python.yml` passes `typecheck: mypy` and `diff-coverage: "80"`
