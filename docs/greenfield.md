@@ -23,7 +23,7 @@ None of this comes back from Terraform. Copy it out first:
   account with `prevent_destroy`), plus finances', career's and
   market-agent's accounts (market-agent's DuckDB database is a blob). Use
   `azcopy` or download the blobs. There is no database server to dump:
-  Grafana keeps only UI preferences, in SQLite on its replica.
+  observability's obsview keeps no state.
 - **Key Vault secret values** for every app (`make secrets` lists the names
   per repo). The new vaults start empty.
 - **Anything in `.env` files** you only have on the old machine.
@@ -214,7 +214,7 @@ running cluster; tag it `session-until=YYYY-MM-DD` if it is meant to stay.
 | `sttfstatedev02d6`, `stlzstatedev02d6` | azure-landingzone `*/backend.tf` (×4), terraform-root-aks `backends/dev.hcl` | New subscription (names derived from its ID) |
 | `sttfsharedjw` | See step 2 | Only if the old account still exists |
 | `container_apps_default_domain`, `custom_domain_verification_id` | cloudflare `environments/dev.tfvars` | New Container Apps environment |
-| `monthly_budget = 150` | azure-landingzone `governance/terraform.tfvars`; the 150 in observability's Costs dashboard | A subscription without the Visual Studio credit: set what you'd pay, since nothing stops spend there |
+| `monthly_budget = 150` | azure-landingzone `governance/terraform.tfvars`; observability's obsview `BUDGET` setting (default 150) | A subscription without the Visual Studio credit: set what you'd pay, since nothing stops spend there |
 
 These don't change:
 
