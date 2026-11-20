@@ -199,9 +199,11 @@ reading as a failed deploy.
     resource `session-until=YYYY-MM-DD` to keep it overnight on purpose.
   - **cost-feed**, daily from observability: whether the cost feed below
     posted.
-- **`Costs_CL`** holds cost per day, resource group and service, which
-  observability's `schedule-costs` reads from Cost Management and re-sends
-  for the last seven days each night. It shows the charge before any credit,
+- **`Costs_CL`** holds cost per day, resource (`ResourceId`) and service,
+  with the resource group read from the ID, which observability's
+  `schedule-costs` reads from Cost Management and re-sends for the last
+  seven days each night. Readers take each day's rows from the latest run
+  that posted it and sum them. It shows the charge before any credit,
   i.e. what pay-as-you-go would bill. obsview's Costs view reads it.
 - **Two platform alerts read it** (azure-container-apps): `ops_event_bad` on
   the latest bad row per check, and `ops_events_silent` when the table is

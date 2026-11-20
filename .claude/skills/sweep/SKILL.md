@@ -29,4 +29,5 @@ Request: $ARGUMENTS
    (`gh pr merge --squash`) once all its required checks pass, unless the user
    asked to leave them open; never `--admin`.
 5. **Finish with a table**: repo | PR | checks | notes. Below it, list the
-   skipped repos and any follow-ups.
+   skipped repos, any follow-ups and every **Decisions for you** the PRs
+   recorded (see /change step 8).
