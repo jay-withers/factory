@@ -58,6 +58,16 @@ When the request points that way, go ahead without asking:
 Put every open question in one AskUserQuestion up front, then run to the end.
 Don't ask for approval of a plan once the direction has been chosen.
 
+## Decide, but say so
+
+Smaller product choices, not worth stopping for, still get made for the
+user along the way: which page an app opens on, a default value, what a
+screen hides. Make them, and list each under **Decisions for you** in the PR
+body and the hand-off. Writing one only into a code comment, the README or a
+test hides it. gym-log's installed app kept opening on Strength Training
+after the home page arrived (gym-log#19, undone in #232), because that choice
+was recorded in all three but never put to the user.
+
 ## Never, even when asked
 
 These are the hard rules in [CLAUDE.md](../CLAUDE.md#hard-rules): applying
@@ -68,5 +78,5 @@ renaming a repo. Say what the user needs to run instead.
 ## Hand-off
 
 End with what changed (PR links), what's waiting for the user (the
-`terraform-pending` or `deploy-pending` issue, and what it will do), and
-anything you found but didn't fix. Report failures plainly.
+`terraform-pending` or `deploy-pending` issue, and what it will do), the
+decisions made for them, and anything you found but didn't fix. Report failures plainly.

@@ -47,14 +47,20 @@ Request: $ARGUMENTS
    commit what it changed (a new commit, never an amend of a pushed one).
    The same goes for every later push, such as a fix for a failing CI check.
    Never work round the hook.
-8. **Ship**: `git push -u origin <branch>`, then `gh pr create --fill` (or
-   write a short summary body), then `gh pr checks --watch`. Once every
+8. **Ship**: `git push -u origin <branch>`, then `gh pr create` with a short
+   summary body, then `gh pr checks --watch`. If the change settles something
+   that is the user's to choose and the request didn't (what a screen opens
+   on, a default, what's hidden or dropped, a behaviour a test now pins), list
+   each one under a **Decisions for you** heading in the body, in a line
+   each: what you chose and the alternative. Leave the heading out when there
+   are none. Once every
    required check has passed, merge it with `gh pr merge --squash`, unless the
    user asked to leave it open. If the branch is behind main (the rulesets
    require it up to date), `gh pr update-branch` and wait for the checks again.
    Never `--admin`, never round the ruleset.
 9. **Report**: the PR URL, the check results, what you verified locally,
-   review findings you left unfixed, and
+   review findings you left unfixed, any **Decisions for you** from the PR
+   body, and
    anything the user still has to do: applying a Terraform change (run
    `cd-terraform` by hand, or `make apply` where a repo has no CD), and
    merging if it was left open. Never apply yourself.
