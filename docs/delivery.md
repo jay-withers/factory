@@ -53,7 +53,7 @@ PR ──► required checks ──► merge (you, or Renovate auto-merge)
 
 Repos with this flow:
 
-- repo-agent, gym-log, finances, career, security-testing: app + infra.
+- repo-agent, health, finances, career, security-testing: app + infra.
 - observability: obsview (its dashboards app, which replaced Grafana), app +
   infra. Its `make deploy` sets the whole env with `--replace-env-vars`, so a
   container app secret leaves its env (deploy) before Terraform removes it
@@ -102,7 +102,7 @@ proves each deploy, for any repo whose Makefile has a `smoke` target:
    reaches its storage or database, then exits. It never emails, calls an LLM,
    trades or scans. Every job's run starts before any is awaited (10 minutes
    at most). With `browser-check: true` (workflows v1.30.0+; career,
-   finances, gym-log, observability) it also loads each app's `/` in Chromium once `/readyz`
+   finances, health, observability) it also loads each app's `/` in Chromium once `/readyz`
    passes, which is the login page, unauthenticated: anything but a 200, or
    any console error (a CSP block is one), fails. The workflow installs
    Chromium before deploying, so a CDN blip fails the run without touching
@@ -114,7 +114,7 @@ proves each deploy, for any repo whose Makefile has a `smoke` target:
    already run here. The `deploy-failed` issue says whether
    the rollback held.
 
-Repos with it: gym-log, finances, career, market-agent, observability
+Repos with it: health, finances, career, market-agent, observability
 (apps, most with jobs); repo-agent, security-testing (jobs).
 `scripts/smoke.sh` lives in jay-withers/workflows, and each repo's
 `make smoke` fetches it at its pinned commit. Change it there, and it reaches
@@ -136,7 +136,7 @@ each repo with that repo's next pin bump.
 
 ## Backups
 
-gym-log, finances and career each run a nightly **backup job**
+health, finances and career each run a nightly **backup job**
 (`<app> backup`: 02:30, 02:45 and 03:00 UTC) that copies its documents, exactly
 as stored, to the cloudflare repo's R2 bucket `jw-app-backups`, off Azure
 entirely. Each copy is age-encrypted to the owner's offline key and to a
@@ -397,7 +397,7 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   Based Access Control Administrator** on each group, conditioned to exclude
   Owner, User Access Administrator and RBAC Administrator (Microsoft's "Allow
   most roles, but don't allow others to assign roles" example). Those apply in
-  CD (first proved by gym-log#106 on 2026-10-29). The pipeline can't grant
+  CD (first proved by health#106 on 2026-10-29). The pipeline can't grant
   or remove any of the three, and can't create a custom role to get round it.
 - **Not granted: role assignments anywhere else.** A grant outside the repo's
   own group (observability's Log Analytics Reader on the platform workspace,
@@ -407,7 +407,7 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
 - **Delete locks: pipelines create, people remove.** Every consumer has
   **Resource Lock Creator** (custom role: `locks/read` + `locks/write`, no
   `delete`) on each of its `deploy_resource_groups`. Each store of record
-  (the resources already carrying `prevent_destroy`: finances', gym-log's and
+  (the resources already carrying `prevent_destroy`: finances', health's and
   career's storage accounts) has a `CanNotDelete` `azurerm_management_lock`
   beside it, as bootstrap's state accounts do. Rule: a new `prevent_destroy` store gets a lock too. Whole
   resource groups are deliberately **not** locked: a group lock covers every
@@ -437,8 +437,8 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   azure-landingzone still keeps them in its tfvars. terraform-root-aks gets
   them from `pipeline_environments`' `operator_variables`.
 - **No Entra sign-in for users (Container Apps EasyAuth), by decision.** The
-  public apps keep their own passcode gate. Tried on gym-log and reverted on
-  2026-10-31 (gym-log#118, azure-landingzone#68). Don't propose it again.
+  public apps keep their own passcode gate. Tried on health and reverted on
+  2026-10-31 (health#118, azure-landingzone#68). Don't propose it again.
 - **Called workflows never exceed their caller's permissions.** `cd-tag`'s
   `publish` job grants `id-token: write` and `issues: write` so `cd-publish`'s
   deploy can use them.
@@ -525,7 +525,7 @@ still issues readable OIDC subjects, not the immutable form.
   OS_PATCH_DATE` directly before the upgrade step and that layer re-runs once
   a day while everything above it stays cached. Declared in
   security-testing's image and market-agent's dashboard. The Python app
-  images (gym-log, finances, career, repo-agent, market-agent's API) carry no
+  images (health, finances, career, repo-agent, market-agent's API) carry no
   upgrade step of their own: they build on dev-containers' `python-app` and
   `python-app-builder`, which upgrade on their own rebuild (`ARG REBUILD`),
   so they pick up OS fixes through Renovate's digest bumps of those images.
@@ -559,7 +559,7 @@ still issues readable OIDC subjects, not the immutable form.
    `terraform-plan` gate), `cd-terraform`, `ci-container-build` (`changes` job
    + `container-build` gate), `cd-tag` → `cd-publish` with a `deploy` job
    (`container-apps-deploy.yml`), and a `make deploy` target that takes
-   `IMAGE_TAG` and `ENV`. Copy from gym-log.
+   `IMAGE_TAG` and `ENV`. Copy from health.
 3. Grant admin RBAC to explicit object IDs, never to "whoever applies", and
    set `workload_profile_name = "Consumption"` on each app and job.
    Create every app and job on `ghcr.io/jay-withers/dev-containers/placeholder:latest`

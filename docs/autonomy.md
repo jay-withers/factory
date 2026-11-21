@@ -1,7 +1,7 @@
 # When to ask, and when to just do it
 
 For Claude sessions working from this repo. The aim is that a short prompt
-("bump X", "add Y to gym-log", "fix the failing drift check") runs to a
+("bump X", "add Y to health", "fix the failing drift check") runs to a
 merged PR without questions. The estate's guardrails catch mistakes; the
 user's attention is kept for decisions only they can make.
 
@@ -49,7 +49,7 @@ When the request points that way, go ahead without asking:
 - **New ongoing cost**: anything billed by the hour or month beyond cents.
   Rebuilding the deleted AKS cluster counts.
 - **Deleting data, or anything with `prevent_destroy`**: state containers,
-  storage accounts, Key Vaults, the gym-log blob.
+  storage accounts, Key Vaults, the health blob.
 - **Something visible to other people**: making a repo or package public,
   emailing or posting anywhere outside GitHub.
 - **A real choice of direction** the request leaves open and the code doesn't
@@ -64,8 +64,8 @@ Smaller product choices, not worth stopping for, still get made for the
 user along the way: which page an app opens on, a default value, what a
 screen hides. Make them, and list each under **Decisions for you** in the PR
 body and the hand-off. Writing one only into a code comment, the README or a
-test hides it. gym-log's installed app kept opening on Strength Training
-after the home page arrived (gym-log#19, undone in #232), because that choice
+test hides it. health's installed app kept opening on Strength Training
+after the home page arrived (health#19, undone in #232), because that choice
 was recorded in all three but never put to the user.
 
 ## Never, even when asked
