@@ -87,7 +87,9 @@ each, but the rule applies however the command is spelled:
 - Never push to a default branch or force-push. Merging a PR is allowed, but
   only once every required check has passed, as a squash merge
   (`gh pr merge --squash`), and never with `--admin` or any other way round
-  the ruleset. Merging deploys: app changes go to dev on their own, and a
+  the ruleset. Merging deploys, but only Renovate's routine releases go to
+  dev on their own. A release a person merged (yours included) opens a
+  `deploy-pending` issue, and the user runs `cd-publish` with its tag. A
   Terraform change opens a `terraform-pending` issue for the user to apply.
 - Never run `terraform apply`/`destroy` or `make apply`/`destroy` in any
   repo. A repo with a `cd-terraform` workflow only plans on merge to main
