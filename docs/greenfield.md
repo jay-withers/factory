@@ -19,8 +19,10 @@ tenant until github-repos is applied in the new one.
 
 None of this comes back from Terraform. Copy it out first:
 
-- **App data in storage accounts:** gym-log's training history (the one
-  account with `prevent_destroy`), plus finances', career's and
+- **App data in storage accounts:** health's training history (the one
+  account with `prevent_destroy`, still named for gym-log as `st…gymlog…`:
+  health kept `project_name = "gymlog"` when the repo was renamed, so its
+  resources are `rg-gymlog-dev` and the rest, and its blob is `gymlog.json`), plus finances', career's and
   market-agent's accounts (market-agent's DuckDB database is a blob). Use
   `azcopy` or download the blobs. There is no database server to dump:
   observability's obsview keeps no state.
@@ -30,7 +32,7 @@ None of this comes back from Terraform. Copy it out first:
 
 Terraform state does not need copying: every root starts fresh.
 
-If the old tenant is already gone, gym-log's, finances' and career's documents
+If the old tenant is already gone, health's, finances' and career's documents
 are still in Cloudflare R2 (`jw-app-backups`, see delivery.md's Backups), at
 most a day old and encrypted to the owner's offline age key. Each app's README
 ("Backups") says how to restore one.
@@ -46,7 +48,7 @@ most a day old and encrypted to the owner's offline age key. Each app's README
 5  azure-container-apps
 6  github-repos, full apply   ◄── cd-terraform works for every repo after this
 7  cloudflare
-8  apps: repo-agent, gym-log, finances, career, security-testing, market-agent
+8  apps: repo-agent, health, finances, career, security-testing, market-agent
 9  observability
 10 terraform-root-aks (only when you want the cluster)
 ```
@@ -103,7 +105,7 @@ one sweep before running the script. It appears in:
 - azure-landingzone: the `github_repos_apply.storage_account_name` default in
   `terraform/governance/variables.tf`.
 - `terraform/backends/*.hcl` in azure-container-apps, cloudflare, market-agent,
-  repo-agent, gym-log, finances, career, security-testing and observability.
+  repo-agent, health, finances, career, security-testing and observability.
 
 ### 3. azure-landingzone components
 
@@ -174,19 +176,19 @@ binds its custom domain.
 
 ### 8. Apps
 
-For each of repo-agent, gym-log, finances, career, security-testing and
+For each of repo-agent, health, finances, career, security-testing and
 market-agent (the order doesn't matter between them):
 
 1. Run cd-terraform. It creates the app and jobs on the placeholder image.
    Grants outside the app's own resource group are a local `make apply`
    (security-testing's subscription Reader, for example). The repo's README
    says which.
-2. `make secrets`, and set the values saved before the move. For gym-log,
+2. `make secrets`, and set the values saved before the move. For health,
    finances and career that includes the R2 token's two halves, and a **new**
    drill key generated straight into the vault (`make secrets` prints the
    command); the old drill key isn't needed, since the owner's key decrypts
    every copy.
-3. Restore data: gym-log, finances and career blobs into their new storage
+3. Restore data: health, finances and career blobs into their new storage
    accounts (from the copies taken before the move, or from R2), and
    market-agent's database into its new server.
 4. Run `cd-publish` with the latest release tag to replace the placeholder.
@@ -225,7 +227,7 @@ These don't change:
 - Alert email addresses, the Cloudflare zone and token, and GitHub PATs.
 - The backup bucket and its endpoint
   (`https://4984ee9d….eu.r2.cloudflarestorage.com`, the Cloudflare account ID)
-  and the owner's age public key, in gym-log's, finances' and career's
+  and the owner's age public key, in health's, finances' and career's
   `environments/dev.tfvars`. They belong to the Cloudflare account and to the
   owner, not to the tenant.
 

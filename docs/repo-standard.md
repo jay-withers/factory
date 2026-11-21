@@ -107,7 +107,7 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   use: `web` (headers, health, passcode), `azure` (keyvault), `backup`, and `e2e` in
   the dev extra. The builder needs dev-containers v0.22.0+, which has git. A
   fix to one of those goes in appkit with its regression test. career,
-  finances, gym-log, market-agent and repo-agent use it. security-testing is
+  finances, health, market-agent and repo-agent use it. security-testing is
   the deliberate exception: it runs on the ZAP image's Python 3.11 (appkit
   needs 3.12+), and its secret lookup is one env-then-vault helper.
 - **Web apps have browser tests in `tests/e2e/`** (Playwright, through
@@ -117,14 +117,14 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   block is one). `ci-python.yml` passes `playwright: true` (workflows
   v1.29.0+), so they run inside `test / Test` with no new required check.
   They skip locally without Chromium and fail under CI; `make e2e` installs
-  it. career, finances and gym-log have them.
+  it. career, finances and health have them.
 - **The smoke test is jay-withers/workflows' `scripts/smoke.sh`**
   (workflows v1.30.0+), never a copy: `make smoke` fetches it at the commit
   `cd-publish.yml` pins `container-apps-deploy.yml` to, so CI and a local run
   agree and Renovate's pin bump moves it. The README of workflows has the
   Makefile snippet. A web app whose `/` answers 200 unauthenticated (the
   login page or a redirect to it) sets `browser-check: true` in
-  `cd-publish.yml`: career, finances, gym-log and observability.
+  `cd-publish.yml`: career, finances, health and observability.
   market-agent's dashboard is the deliberate exception: its nginx gate
   answers `/` with the login form as a 401 body so deep links survive, which
   the check reads as a failure. Its own Playwright suite covers it in CI.
@@ -140,7 +140,7 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   `ignore_changes`. Set `args`, never `command`, and
   `workload_profile_name = "Consumption"`.
 - **The full checklist for a new app** is in [delivery.md](delivery.md#adding-an-app-repo-to-this-flow).
-  Copy from gym-log.
+  Copy from health.
 
 ## Known drift from this standard
 
