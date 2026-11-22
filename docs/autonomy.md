@@ -49,7 +49,7 @@ When the request points that way, go ahead without asking:
 - **New ongoing cost**: anything billed by the hour or month beyond cents.
   Rebuilding the deleted AKS cluster counts.
 - **Deleting data, or anything with `prevent_destroy`**: state containers,
-  storage accounts, Key Vaults, the health blob.
+  storage accounts, Key Vaults, health's training log (`gymlog.json`).
 - **Something visible to other people**: making a repo or package public,
   emailing or posting anywhere outside GitHub.
 - **A real choice of direction** the request leaves open and the code doesn't

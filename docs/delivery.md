@@ -407,9 +407,10 @@ GitHub environment. It sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
 - **Delete locks: pipelines create, people remove.** Every consumer has
   **Resource Lock Creator** (custom role: `locks/read` + `locks/write`, no
   `delete`) on each of its `deploy_resource_groups`. Each store of record
-  (the resources already carrying `prevent_destroy`: finances', health's and
-  career's storage accounts) has a `CanNotDelete` `azurerm_management_lock`
-  beside it, as bootstrap's state accounts do. Rule: a new `prevent_destroy` store gets a lock too. Whole
+  (the resources already carrying `prevent_destroy`: finances', health's,
+  career's and market-agent's storage accounts) has a `CanNotDelete`
+  `azurerm_management_lock` beside it, as bootstrap's state accounts do.
+  Rule: a new `prevent_destroy` store gets a lock too. Whole
   resource groups are deliberately **not** locked: a group lock covers every
   resource inside, so every destroy or replace in CD would fail. To remove a
   lock, run github-repos' **manual-remove-lock** by hand (it runs in `apply`
