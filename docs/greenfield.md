@@ -19,13 +19,15 @@ tenant until github-repos is applied in the new one.
 
 None of this comes back from Terraform. Copy it out first:
 
-- **App data in storage accounts:** health's training history (the one
-  account with `prevent_destroy`, still named for gym-log as `st…gymlog…`:
-  health kept `project_name = "gymlog"` when the repo was renamed, so its
-  resources are `rg-gymlog-dev` and the rest, and its blob is `gymlog.json`), plus finances', career's and
-  market-agent's accounts (market-agent's DuckDB database is a blob). Use
-  `azcopy` or download the blobs. There is no database server to dump:
-  observability's obsview keeps no state.
+- **App data in storage accounts:** health's, finances', career's and
+  market-agent's accounts. Each one carries `prevent_destroy`. Health's is
+  still named for gym-log (`st…gymlog…`): health kept
+  `project_name = "gymlog"` when the repo was renamed, so its resources are
+  `rg-gymlog-dev` and the rest. It holds three blobs: `gymlog.json` (the
+  training log), `chat.json` and `garmin-session.json`. Market-agent's DuckDB
+  database is a blob too. Use `azcopy` or download every blob in each
+  account. There is no database server to dump: observability's obsview
+  keeps no state.
 - **Key Vault secret values** for every app (`make secrets` lists the names
   per repo). The new vaults start empty.
 - **Anything in `.env` files** you only have on the old machine.
@@ -156,7 +158,10 @@ ID below.
 
 `make apply`, locally, as yourself. This one apply:
 
-- creates every app's resource group, identity, state container and grants;
+- creates every app's resource group, identity, state container and grants.
+  Health's are still keyed `gym-log`: its `state_consumers` entry, its deploy
+  identity and its state container (`container_name = "gym-log"` in
+  health's `terraform/backends/dev.hcl`) all kept the old name;
 - points every repo's `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
   `AZURE_SUBSCRIPTION_ID` at the new tenant;
 - sets the operator `TF_VAR_*` and events variables;
