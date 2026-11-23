@@ -222,8 +222,8 @@ gcp-landingzone's README "Manual steps", in order:
 2. Roles for the person applying.
 3. The platform project and quota project, made with gcloud.
 4. Google's default org policies, adopted.
-5. `make apply C=bootstrap`, by hand, from your own clone. Its state is
-   local: keep a copy off the machine.
+5. Bootstrap's first apply, by hand, on local state (the bucket doesn't
+   exist yet), then `terraform init -migrate-state` into the bucket it made.
 
 Apps on GCP (health, once it moves) need bootstrap first, for their project
 and their state prefix.
@@ -238,7 +238,7 @@ and their state prefix.
 | `sttfsharedjw` | See step 2 | Only if the old account still exists |
 | `container_apps_default_domain`, `custom_domain_verification_id` | cloudflare `environments/dev.tfvars` | New Container Apps environment |
 | Organization ID `668995077740`, billing account `01B172-6360A2-5D15E2` | gcp-landingzone `bootstrap/terraform.tfvars` | New Google organization or billing account |
-| `jaywithers-platform`, `jaywithers-health-dev`, `jaywithers-tfstate` | gcp-landingzone `bootstrap/terraform.tfvars` (and the gcloud steps in its README) | Never reusable once deleted: a new organization needs new IDs |
+| `jaywithers-platform`, `jaywithers-health-dev`, `jaywithers-tfstate` | gcp-landingzone `bootstrap/terraform.tfvars`, the bucket also in `bootstrap/versions.tf`'s backend block (and the gcloud steps in its README) | Never reusable once deleted: a new organization needs new IDs |
 | `monthly_budget = 150` | azure-landingzone `governance/terraform.tfvars`; observability's obsview `BUDGET` setting (default 150) | A subscription without the Visual Studio credit: set what you'd pay, since nothing stops spend there |
 
 These don't change:
