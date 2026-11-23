@@ -74,10 +74,14 @@ Repos with this flow:
   (`uai-aks-dev`), not a `state_consumers` one.
 - template-repo-terraform-root ships a dormant `cd-terraform` that switches
   on once a repo made from it adds `terraform/backends/dev.hcl`.
+- gcp-landingzone: infra on Google Cloud, one main-only `apply` environment
+  and no PR plan, like azure-landingzone. `bootstrap` is always applied by
+  hand; its later components use cd-terraform with `cloud: gcp`.
 
-Two repos log in as identities azure-landingzone creates, not github-repos.
-github-repos' `pipeline_environments` creates their GitHub environments,
-variables and events grant (see [Identities and permissions](#identities-and-permissions)).
+Three repos log in as identities a landing zone creates, not github-repos.
+github-repos' `pipeline_environments` creates their GitHub environments and
+variables, plus the events grant for the Azure ones (see
+[Identities and permissions](#identities-and-permissions)).
 
 ## Smoke test and rollback
 
@@ -487,6 +491,32 @@ container) is federated only to its main-only `apply` environment.
 - **A fresh subscription is bootstrapped by hand:** `make apply` for every
   component in order, because the identity doesn't exist until bootstrap has
   run. After that, cd-terraform takes over.
+
+**gcp-landingzone applies the same way, on Google Cloud.** Its `bootstrap`
+creates `gcp-landingzone-apply@jaywithers-platform.iam.gserviceaccount.com`
+and binds it, through the `github` Workload Identity pool, to the main-only
+`apply` environment's subject alone.
+
+- **Sign-in:** `terraform-deploy.yml` and `terraform-unlock.yml` with
+  `cloud: gcp` (v1.32.0+) exchange the job's GitHub OIDC token for Google
+  credentials. The environment holds `GCP_WORKLOAD_IDENTITY_PROVIDER` and
+  `GCP_SERVICE_ACCOUNT`, set by github-repos' `pipeline_environments` (a `gcp`
+  block) as literals from bootstrap's outputs: github-repos has no Google
+  access. The pool admits jay-withers tokens only; each identity's binding
+  names one full subject.
+- **Its roles stop at the `apps` folder,** the platform project and its own
+  `gcp-landingzone/` state prefix. It holds nothing on the organization, so
+  org policy, folders, projects, billing and every app's state grant stay
+  with bootstrap, applied by a person.
+- **State:** one bucket, `jaywithers-tfstate`, one prefix per repo.
+  bootstrap's own is `bootstrap/`, which no pipeline can reach. An app's
+  pipeline gets objects under its own prefix, granted to its GitHub
+  environment's federated identity directly (bootstrap's `state_consumers`).
+- **Delete protection is roles, not locks:** GCP has no `CanNotDelete` lock,
+  so a store of record gets `prevent_destroy` and a pipeline role without
+  delete on it ("pipelines create, people remove", as on Azure).
+- **No drift event.** The events table is Azure's, so a GCP drift check
+  writes its status to the job summary and warns on drift.
 
 **Spokes use the identity the landing zone vends.** landingzones creates
 each spoke's resource group, identity, hub grants and state container, and
