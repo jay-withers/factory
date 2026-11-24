@@ -87,7 +87,7 @@ def main() -> int:
     )
     print(
         f"Blocked: {top.name} can't be pushed or opened as a PR because {reason}.\n"
-        f"Run `{ROOT}/scripts/verify.sh {top}` (lint + tests), commit anything it "
+        f"Run `{ROOT}/scripts/verify.sh {top}` (lint, docs check, tests), commit anything it "
         "changed, verify again if you did, then retry. Never bypass this.",
         file=sys.stderr,
     )

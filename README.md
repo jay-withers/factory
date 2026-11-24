@@ -53,8 +53,16 @@ CATALOG.md                    generated repo list, imported by CLAUDE.md
   approvals, the permissions and the traps.
 - **Quality gate.** Before a change leaves its worktree, Claude reviews the
   diff with the `code-review` skill and runs `scripts/verify.sh` (pre-commit,
-  `make lint`, `make typecheck` where the repo has it, and `make test`). A Claude Code hook refuses `git push` and `gh pr create` unless the
-  commit being pushed is exactly what passed.
+  `make lint`, the docs check, `make typecheck` where the repo has it, and
+  `make test`). A Claude Code hook refuses `git push` and `gh pr create`
+  unless the commit being pushed is exactly what passed.
+- **Docs ship with the change.** Each PR updates the docs it makes false, in
+  its own repo and in other repos that describe it, and says so on a
+  **Docs** line in its body. Factory's own docs go in a companion PR from a
+  factory worktree (`make task REPO=factory ...`). `scripts/docs-check.py`,
+  run by `verify.sh`, fails on any link, path or `make` target in the
+  Markdown that the change broke. References that were already broken show
+  as warnings. `make docs-check` audits every clone at once.
 - **Local runs.** App repos expose
   `make run` / `make test`, so Claude can run and smoke-test a change before
   opening the PR.
@@ -66,8 +74,10 @@ make install           # mise install, then the pre-commit hooks (run once after
 make login             # log gh in to GitHub if it isn't already, then sync
 make lint              # run all pre-commit hooks against every file
 make sync              # clone/fast-forward every repo, regenerate CATALOG.md
-make task REPO=x BRANCH=feat/y   # create worktrees/x--feat-y, print its path
-make verify DIR=worktrees/x--feat-y  # lint + test it; pushes are blocked until this passes
+make task REPO=x BRANCH=feat/y   # create worktrees/x--feat-y, print its path (REPO=factory for this repo)
+make verify DIR=worktrees/x--feat-y  # lint, docs check, test; pushes are blocked until this passes
+make docs-check        # broken links, paths and make targets in every clone's docs
+make test              # this repo's own tests (the scripts')
 make status            # uncommitted/unpushed work, and every open PR
 make clean-worktrees   # remove worktrees whose PR is merged or closed
 ```
@@ -90,7 +100,8 @@ make clean-worktrees   # remove worktrees whose PR is merged or closed
 
 Built on [template-repo-base](https://github.com/jay-withers/template-repo-base).
 `ci-lint` runs every pre-commit hook (`pre-commit / Pre-commit`, the required
-check), `ci-codeql` scans the workflows, and `cd-tag` tags a release on every
+check), including two local ones: the scripts' unit tests and a links check
+over this repo's own Markdown, `ci-codeql` scans the workflows, and `cd-tag` tags a release on every
 merge. Changes here go through a branch and PR like any other repo.
 
 ## Known gaps

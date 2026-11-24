@@ -59,3 +59,22 @@ repos:
     rev: 2eece55955ced00200be9729e9728cb7dacca505 # frozen: v2.15.1
     hooks:
       - id: hadolint-docker
+
+  - repo: local
+    hooks:
+      # This repo's docs link to each other's headings a lot: keep those whole.
+      # Paths and make targets aren't checked here, since these docs mostly
+      # name other repos' files and targets.
+      - id: docs-check
+        name: docs-check (links)
+        entry: scripts/docs-check.py --only links
+        language: system
+        files: \.md$
+        pass_filenames: false
+
+      - id: scripts-tests
+        name: scripts' unit tests
+        entry: python3 -m unittest discover -s scripts/tests
+        language: system
+        files: ^scripts/
+        pass_filenames: false

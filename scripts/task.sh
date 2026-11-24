@@ -14,9 +14,12 @@ branch="$2"
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 dir="$root/repos/$repo"
+# factory itself has no clone under repos/: its worktrees come from this
+# checkout, so a change elsewhere can ship its factory doc updates alongside.
+[[ "$repo" == factory ]] && dir="$root"
 worktree="$root/worktrees/$repo--${branch//\//-}"
 
-if [[ ! -d "$dir/.git" ]]; then
+if ! git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
   echo "repos/$repo doesn't exist - check the name in CATALOG.md, or run 'make sync'" >&2
   exit 1
 fi

@@ -24,3 +24,6 @@ tmp/
 repos/
 worktrees/
 CATALOG.md
+
+# Python bytecode from the scripts' tests
+__pycache__/
