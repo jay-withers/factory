@@ -30,15 +30,24 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
 - One repo, one change: use `/change <repo> <request>`. The same change in
   several repos: use `/sweep <request> [repos | topic:<t> | all]`. Both skills
   spell out the workflow. In short: worktree, read that repo's CLAUDE.md,
-  edit with tests (a fix gets a regression test), `make test`/`make run`
-  locally, review the diff with the `code-review` skill, `../../scripts/verify.sh`,
+  edit with tests (a fix gets a regression test), update the docs it makes
+  false, `make test`/`make run` locally, review the diff with the `code-review` skill, `../../scripts/verify.sh`,
   Conventional Commit, push, `gh pr create`, `gh pr checks --watch`, merge
   once green (unless the user asked to leave it open), report the URL.
 - **Nothing ships from a worktree unverified.** A `PreToolUse` hook in
   `.claude/settings.json` (`scripts/hooks/require-verified.py`) blocks
   `git push` and `gh pr create` under `worktrees/` unless HEAD's tree is the
-  one `scripts/verify.sh` last passed (lint + tests). Changed something since?
-  Verify again. Never work round it.
+  one `scripts/verify.sh` last passed (lint, docs check, tests). Changed
+  something since? Verify again. Never work round it.
+- **A change ships with its docs.** In the same PR, update every doc it
+  makes false: the repo's README, CLAUDE.md and `docs/`, plus any other
+  repo's docs that describe it. Put factory's own docs (`docs/`, this file,
+  the README, the skills) in a companion PR from
+  `make task REPO=factory BRANCH=docs/<slug>`. Every PR body carries a
+  **Docs** line saying what changed or why nothing needed to. `verify.sh`
+  runs `scripts/docs-check.py`, which fails on links, paths and `make`
+  targets the change broke. Stale prose is on you: /change step 5 says
+  where to look. `make docs-check` audits every clone.
 - **Each repo's own CLAUDE.md and README override this file.** Claude Code
   loads a nested CLAUDE.md when you work on files under it, but read it
   explicitly before your first edit in a repo anyway.
@@ -112,7 +121,9 @@ Built on `template-repo-base`. Its own changes follow the usual flow on a
 branch here: Conventional Commits (enforced by commitlint), pre-commit hooks
 pinned by SHA (`make lint`), `ci-lint` on PRs (`pre-commit / Pre-commit` is
 the required check), and `cd-tag` tagging releases on merge. The scripts
-behind the Makefile live in `scripts/`. `make` with no target prints help.
+behind the Makefile live in `scripts/`, with unit tests in `scripts/tests/`
+(`make test`). Two local pre-commit hooks run those tests and check that
+this repo's Markdown links and heading anchors still resolve. `make` with no target prints help.
 There is no dev container: `mise.toml` pins the tools and `make install` runs
 `mise install`. `.vscode/extensions.json` recommends the extensions for the
 whole estate, since VS Code reads only the workspace root's file, not the

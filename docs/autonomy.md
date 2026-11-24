@@ -14,7 +14,7 @@ user's attention is kept for decisions only they can make.
 - **App releases from a person are held** (`deploy-pending`), and every
   deploy is smoke-tested with rollback.
 - **Nothing leaves a worktree unverified.** A hook blocks pushes and PRs
-  until `scripts/verify.sh` (lint + tests) has passed on exactly that code,
+  until `scripts/verify.sh` (lint, docs check, tests) has passed on exactly that code,
   and the skills review every diff before it's committed.
 - **`.claude/settings.json` denies** the hard-rule commands (applies,
   destroys, force-pushes, admin merges).
@@ -36,8 +36,10 @@ When the request points that way, go ahead without asking:
   plans), re-running a failed CI job, reading logs and Azure state.
 - Opening the next PR in a chain once the one before it has merged or been
   applied.
-- Updating docs (this repo's, the repo's CLAUDE.md and README) to match what
-  changed.
+- Updating docs to match what changed: the repo's README, CLAUDE.md and
+  `docs/`, other repos' docs that describe it, and this repo's (in a
+  companion PR). This isn't optional: a change whose docs still describe the
+  old behaviour isn't finished.
 
 ## Ask first, in one batched question
 
@@ -77,6 +79,6 @@ renaming a repo. Say what the user needs to run instead.
 
 ## Hand-off
 
-End with what changed (PR links), what's waiting for the user (the
+End with what changed (PR links, including any companion docs PR), what's waiting for the user (the
 `terraform-pending` or `deploy-pending` issue, and what it will do), the
 decisions made for them, and anything you found but didn't fix. Report failures plainly.
