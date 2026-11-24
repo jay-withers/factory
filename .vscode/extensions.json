@@ -10,6 +10,7 @@
     "timonwong.shellcheck",
     "foxundermoon.shell-format",
     "davidanson.vscode-markdownlint",
+    "bierner.markdown-mermaid",
     "eamodio.gitlens",
     "mhutchie.git-graph",
     "editorconfig.editorconfig"

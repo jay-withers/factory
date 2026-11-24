@@ -54,6 +54,16 @@ else
   echo "    no origin/HEAD to compare with: checking links only"
   "$scripts/docs-check.py" --only links .
 fi
+# A factory worktree: the architecture deck's estate map must still name
+# every repo in the main checkout's CATALOG.md (which make sync keeps).
+if [[ ${#kinds[@]} -gt 0 && -f docs/architecture.md ]]; then
+  catalog="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/CATALOG.md"
+  if [[ -f "$catalog" ]]; then
+    scripts/architecture-check.py --catalog "$catalog"
+  else
+    echo "    no CATALOG.md to check docs/architecture.md against: run make sync"
+  fi
+fi
 
 if has_target typecheck; then
   echo "==> typecheck"

@@ -20,10 +20,11 @@ lint: ## Run all pre-commit hooks against every file
 test: ## Run this repo's own tests (the scripts' unit tests)
 	python3 -m unittest discover -s scripts/tests
 
-docs-check: ## Audit every clone's docs (and this repo's links) for broken links, paths and make targets
+docs-check: ## Audit every clone's docs (and this repo's links and architecture deck) for broken links, paths and make targets
 	@test -n "$(wildcard repos/*/.git)" || { echo "no clones in repos/ - run 'make sync' first"; exit 1; }
 	@status=0; \
 	scripts/docs-check.py --only links . || status=1; \
+	scripts/architecture-check.py || status=1; \
 	scripts/docs-check.py $(patsubst %/.git,%,$(wildcard repos/*/.git)) || status=1; \
 	exit $$status
 

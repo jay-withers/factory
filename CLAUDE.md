@@ -67,6 +67,14 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
 - **[docs/repo-standard.md](docs/repo-standard.md) is the shape every repo
   should have.** Build new repos to it, and use it to tell a deliberate
   exception from drift.
+- **[docs/architecture.md](docs/architecture.md) is the estate's
+  architecture as a talk-through deck**: Mermaid diagrams of how the pieces
+  connect, with speaker notes. Update the slide a change makes false (a new
+  or removed repo, shared resource, dependency, trust path or delivery
+  stage). Its estate map must name every repo in `CATALOG.md`:
+  `scripts/architecture-check.py` checks that at every session sync, in
+  `make docs-check` and in `verify.sh` for factory, and the sync hook
+  reports a mismatch as `deck check:`.
 - **[docs/greenfield.md](docs/greenfield.md) is the apply order for
   rebuilding the estate in a new tenant**, with every literal tied to the
   current tenant. A new tenant-bound literal belongs in its table.
