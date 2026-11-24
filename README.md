@@ -76,7 +76,7 @@ make lint              # run all pre-commit hooks against every file
 make sync              # clone/fast-forward every repo, regenerate CATALOG.md
 make task REPO=x BRANCH=feat/y   # create worktrees/x--feat-y, print its path (REPO=factory for this repo)
 make verify DIR=worktrees/x--feat-y  # lint, docs check, test; pushes are blocked until this passes
-make docs-check        # broken links, paths and make targets in every clone's docs
+make docs-check        # broken links, paths and make targets in every clone's docs, plus the architecture deck's repo list
 make test              # this repo's own tests (the scripts')
 make status            # uncommitted/unpushed work, and every open PR
 make clean-worktrees   # remove worktrees whose PR is merged or closed
@@ -84,6 +84,10 @@ make clean-worktrees   # remove worktrees whose PR is merged or closed
 
 ## The docs
 
+- [docs/architecture.md](docs/architecture.md): the estate's architecture
+  as a deck to talk people through, a Mermaid diagram and speaker notes per
+  slide. Its estate map is checked against `CATALOG.md` at every session
+  sync, so a new or archived repo shows up as a `deck check:` line.
 - [docs/delivery.md](docs/delivery.md): what deploys on merge, the
   `terraform-pending`, `deploy-pending`, `deploy-failed` and `build-failed`
   issues, required checks, and the Azure permission traps.

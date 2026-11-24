@@ -42,7 +42,10 @@ Request: $ARGUMENTS
      repo has (targets, files, tooling, exceptions).
      [greenfield.md](../../../docs/greenfield.md) owns apply order and
      tenant-bound literals. [autonomy.md](../../../docs/autonomy.md) owns when
-     to ask. A change in one of those areas almost always needs its doc
+     to ask. [architecture.md](../../../docs/architecture.md) owns how the
+     pieces connect: a new or removed repo, shared resource, dependency,
+     trust path or delivery stage changes the slide that draws it, diagram
+     and speaker notes both. A change in one of those areas almost always needs its doc
      updated.
    - **Other repos:** grep `repos/*/` Markdown for the names too, since a
      changed workflow input or appkit API is documented by its callers.
