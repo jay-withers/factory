@@ -30,7 +30,10 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
 - One repo, one change: use `/change <repo> <request>`. The same change in
   several repos: use `/sweep <request> [repos | topic:<t> | all]`. Both skills
   spell out the workflow. In short: worktree, read that repo's CLAUDE.md,
-  edit with tests (a fix gets a regression test), update the docs it makes
+  edit with tests (a fix gets a regression test), a quick quality pass over
+  the code it touched (small fixes ride along as their own commit; what's
+  left on purpose goes in that repo's CLAUDE.md "Decisions not to
+  re-litigate"), update the docs it makes
   false, `make test`/`make run` locally, review the diff with the `code-review` skill, `../../scripts/verify.sh`,
   Conventional Commit, push, `gh pr create`, `gh pr checks --watch`, merge
   once green (unless the user asked to leave it open), report the URL.
@@ -46,7 +49,7 @@ ships as a PR in the repo it belongs to, through that repo's own CI and
   `make task REPO=factory BRANCH=docs/<slug>`. Every PR body carries a
   **Docs** line saying what changed or why nothing needed to. `verify.sh`
   runs `scripts/docs-check.py`, which fails on links, paths and `make`
-  targets the change broke. Stale prose is on you: /change step 5 says
+  targets the change broke. Stale prose is on you: /change step 6 says
   where to look. `make docs-check` audits every clone.
 - **Each repo's own CLAUDE.md and README override this file.** Claude Code
   loads a nested CLAUDE.md when you work on files under it, but read it

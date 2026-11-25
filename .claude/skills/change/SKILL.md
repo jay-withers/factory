@@ -25,7 +25,28 @@ Request: $ARGUMENTS
      suite that still passes.
    - Where the repo has no test suite (most Terraform repos), say so in the
      report rather than inventing one.
-5. **Bring the docs up to date in the same change.** It isn't done while any
+5. **Quick quality pass over what you touched.** Reread the files and
+   functions the change touched (not the whole repo) for bugs,
+   dead or duplicated code, needless complexity and obvious inefficiency
+   (repeated I/O, a query in a loop, work redone per request). First read
+   the repo's CLAUDE.md "Decisions not to re-litigate" section and any
+   "deliberately" comments in the code, and don't propose what they already
+   settle. Then:
+   - **Small, low-risk fixes go in this PR as their own commit** (`fix:` or
+     `refactor:`), so the main change stays reviewable. A bug fix gets a
+     regression test, as in step 4. The `simplify` skill, run on those
+     files, covers the cleanup half.
+   - **Anything bigger or riskier is a follow-up** in the report, not done.
+   - **Anything you decide to leave, record it** so the next pass doesn't
+     propose it again. A local reason goes in a comment beside the code
+     (`# Deliberately not cached: the token rotates hourly`). A wider call
+     goes in a line under the repo's CLAUDE.md `## Decisions not to
+     re-litigate` heading (add it if missing): what was considered, why
+     not, and what would change the answer. A decision the user makes
+     is recorded the same way.
+   Keep it quick: one read of the touched code, not an audit. List the
+   fixes in the PR body under **Also fixed**.
+6. **Bring the docs up to date in the same change.** It isn't done while any
    doc still describes the old behaviour. Collect the names the change
    touched (files, make targets, env vars, settings, workflow inputs,
    endpoints, resources, behaviours), then:
@@ -56,7 +77,7 @@ Request: $ARGUMENTS
    `verify.sh` fails on any link, path or `make` target in the Markdown that
    the change broke. It can't tell whether prose is still true. That part
    is this step.
-6. **Check it works**, from the worktree:
+7. **Check it works**, from the worktree:
    - Iterate with `make test` (and `make lint`).
    - For an app: `make run` in the background with a free `PORT=`. Smoke-test
      the thing you changed (curl the endpoint, load the page, run the CLI),
@@ -64,11 +85,12 @@ Request: $ARGUMENTS
    - Fix what fails. If something fails for a reason unrelated to the change
      (for example, a tool missing from the machine), say so rather than
      working around it.
-7. **Review the diff** before committing: from the worktree, run the
+8. **Review the diff** before committing: from the worktree, run the
    `code-review` skill at `medium` on the uncommitted change. Fix every
    finding that holds up, adding a regression test for each real bug. Any
-   you leave, and why, go in the report.
-8. **Verify and commit.** Run `../../scripts/verify.sh` from the worktree: it
+   you leave, and why, go in the report, and a deliberate one is recorded
+   as in step 5.
+9. **Verify and commit.** Run `../../scripts/verify.sh` from the worktree: it
    runs `make lint`, the docs check and `make test`, and records the exact
    tree that passed.
    Then commit with a Conventional Commit message. The pre-commit and
@@ -79,8 +101,9 @@ Request: $ARGUMENTS
    commit what it changed (a new commit, never an amend of a pushed one).
    The same goes for every later push, such as a fix for a failing CI check.
    Never work round the hook.
-9. **Ship**: `git push -u origin <branch>`, then `gh pr create` with a short
-   summary body, then `gh pr checks --watch`. The body has a **Docs** line:
+10. **Ship**: `git push -u origin <branch>`, then `gh pr create` with a short
+   summary body, then `gh pr checks --watch`. The body lists the step 5
+   fixes under **Also fixed** (leave it out if none) and has a **Docs** line:
    the docs this PR updated, the companion factory PR, or "none needed" and
    why. If the change settles something
    that is the user's to choose and the request didn't (what a screen opens
@@ -92,9 +115,10 @@ Request: $ARGUMENTS
    user asked to leave it open. If the branch is behind main (the rulesets
    require it up to date), `gh pr update-branch` and wait for the checks again.
    Never `--admin`, never round the ruleset.
-10. **Report**: the PR URL (and the companion factory docs PR, if any), the
-    check results, the **Docs** line, what you verified locally, review
-    findings you left unfixed, any **Decisions for you** from the PR body,
+11. **Report**: the PR URL (and the companion factory docs PR, if any), the
+    check results, the **Docs** line, what you verified locally, the
+    **Also fixed** list and quality-pass follow-ups, review findings you
+    left unfixed, any **Decisions for you** from the PR body,
     docs elsewhere that still need updating, and anything the user still has
     to do: applying a Terraform change (run `cd-terraform` by hand, or
     `make apply` where a repo has no CD), and merging if it was left open.
