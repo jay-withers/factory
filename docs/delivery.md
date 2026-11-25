@@ -287,6 +287,7 @@ permission; without it the delivery checks stay silent.
 | --- | --- | --- |
 | Terraform: Checkov + tflint | pre-commit, locally and in CI | Yes (`pre-commit / Pre-commit`) |
 | Container images: Trivy | shared `docker.yml`, every build, and daily on main | PRs on fixable CRITICAL/HIGH (`container-build`); never a publish. A failing daily build opens a `build-failed` issue |
+| Image Python vs `mise.toml` | shared `docker.yml` (v1.35.0+), every non-push build, and daily on main | PRs on a major.minor mismatch (`container-build`). A failing daily build opens a `build-failed` issue |
 | Code: CodeQL | `ci-codeql`, Python repos | No; alerts in the Security tab |
 | Secrets: gitleaks | pre-commit | Locally, and in CI |
 | Secrets: GitHub secret scanning + push protection | every repo (github-repos `repo_defaults`) | Pushes containing a known secret |
@@ -561,9 +562,18 @@ still issues readable OIDC subjects, not the immutable form.
   `python-app-builder`, which upgrade on their own rebuild (`ARG REBUILD`),
   so they pick up OS fixes through Renovate's digest bumps of those images.
 - **New Python minors break image builds** before tests notice. Compiled deps
-  (httptools, pydantic-core, psycopg-binary) have no wheels yet, the slim image
-  has no compiler, and `ci-python` pins its own version. Keep the Dockerfile
-  and `ci-python` on the same minor.
+  (httptools, pydantic-core, psycopg-binary) have no wheels yet, and the slim
+  image has no compiler.
+- **An app's tested Python is `mise.toml`'s, and must be its image's.**
+  `ci-python` runs on the interpreter mise installs (`python-version` only
+  applies without mise), and the image's is its base's (dev-containers
+  `python-app`, or the ZAP image for security-testing). `docker.yml` (workflows
+  v1.35.0+) compares the two when an image sets `"python"`, on every PR that
+  builds the image (`mise.toml` is in each app's image path filter) and in the
+  daily build of main, and fails on a major.minor mismatch, which on main opens
+  `build-failed`. Renovate never raises mise's Python minor on its own
+  (jay-withers/renovate's mise preset): the `python-app` PR that moves the
+  interpreter fails the check, and bumping `mise.toml` in that PR lands both.
 - **terraform-docs must not read the lock file** (`lockfile: false`). Reading
   it, every lock refresh rewrote the README, Renovate's lock-file maintenance
   PRs (which can't run hooks) failed pre-commit for a month, and the
