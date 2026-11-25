@@ -11,7 +11,7 @@ known.
 | Path | What | Notes |
 | --- | --- | --- |
 | `README.md` | Why, how to run, first-time setup | The person-facing half |
-| `CLAUDE.md` | Traps and decisions not to undo | Not a copy of the README |
+| `CLAUDE.md` | Traps and decisions not to undo | Not a copy of the README. Declined changes go under `## Decisions not to re-litigate`, so the next review doesn't propose them again |
 | `LICENSE` | | |
 | `Makefile` | `make` with no target prints help | `help`, `install`, `lint` at minimum |
 | `.pre-commit-config.yaml` | Hooks pinned by SHA, tag as a comment | Base hooks, gitleaks, actionlint, shellcheck, commitlint |

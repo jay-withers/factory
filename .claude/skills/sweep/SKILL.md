@@ -24,7 +24,9 @@ Request: $ARGUMENTS
    before its push (the hook enforces it). Run the `code-review` skill on each
    repo's diff too, except where the diff is the pilot's change applied
    mechanically: then the pilot's review covers it, and the report says so.
-   The docs step (/change step 5) applies in every repo, not just the
+   The same goes for the quality pass (/change step 5): run it where the
+   diff touches a repo's own code, skip it for a mechanical one.
+   The docs step (/change step 6) applies in every repo, not just the
    pilot: each repo's README and CLAUDE.md describe the change their own
    way. Factory's docs get one companion PR for the whole sweep.
 4. **Watch every PR's checks.** A failure in one repo doesn't block the
@@ -33,5 +35,5 @@ Request: $ARGUMENTS
    asked to leave them open; never `--admin`.
 5. **Finish with a table**: repo | PR | checks | docs | notes, plus the
    companion factory docs PR. Below it, list the
-   skipped repos, any follow-ups and every **Decisions for you** the PRs
-   recorded (see /change step 9).
+   skipped repos, any follow-ups (quality-pass ones included) and every **Decisions for you** the PRs
+   recorded (see /change step 10).
