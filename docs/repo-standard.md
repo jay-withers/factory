@@ -131,9 +131,16 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   Renovate keeps the check's Playwright pin current (workflows' renovate.json).
 - **mypy, configured in `pyproject.toml`** (`check_untyped_defs`, the pydantic
   plugin), pinned in the dev dependencies and run by `make typecheck`.
-  `ci-python.yml` passes `typecheck: mypy` and `diff-coverage: "80"`
-  (workflows v1.28.0+): at least 80% of the lines a PR changes must be run by
-  a test. Total coverage is reported, never gated.
+  `ci-python.yml` passes `typecheck: mypy`, `lint: true`, `coverage-min: "90"`
+  and `diff-coverage: "90"` (workflows v1.34.0+), all inside `test / Test`:
+  ruff (`ruff check` and `ruff format --check`, from the locked dev extra, so
+  the same ruff as `make lint` and the pre-commit hook), at least 90% total
+  coverage on every run, main included, and at least 90% of the lines a PR
+  changes run by a test. **No PR coverage comment**: the floors enforce it,
+  and the table is in the job summary, so callers grant no
+  `pull-requests: write`. Every Python repo was at 90% or more when the floor
+  went on (2026-11-25). Don't meet a floor with a test that only asserts a
+  mock.
 - **`/healthz` reports `version`**, and **`selfcheck`** is side-effect free
   and checks every secret a job reads.
 - **Create apps on `dev-containers/placeholder:latest`** with the image under
