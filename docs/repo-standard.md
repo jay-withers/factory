@@ -143,6 +143,14 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   mock.
 - **`/healthz` reports `version`**, and **`selfcheck`** is side-effect free
   and checks every secret a job reads.
+- **A web app shows its release beside its name** in the header of every
+  signed-in page: `IMAGE_TAG`, trimmed, through an `app_version` template
+  global, small and dimmed, and nothing when it is unset (a local run). Not
+  on the sign-in page. That is a choice about the page, not a secret, since
+  `/healthz` reports the tag to anyone. Keep it beside the home link, not
+  inside it, so the link's name is stable. career, finances, health and
+  observability do this; market-agent's dashboard does the same from its
+  `config.json`.
 - **Create apps on `dev-containers/placeholder:latest`** with the image under
   `ignore_changes`. Set `args`, never `command`, and
   `workload_profile_name = "Consumption"`.
