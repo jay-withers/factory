@@ -95,6 +95,12 @@ scripts/check-tf-standards.sh  # shared verbatim; re-copy, never edit
 dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
 `typecheck`, `build`, `deploy`, `deployed-tag`, `smoke`, `secrets`, `logs`, `url`.
 
+- **`mise.toml`'s `python` is the image's Python** (major.minor). Local runs
+  and `ci-python` test on it, so `ci-container-build` passes `"python":
+  "python"` on the image (workflows v1.35.0+, `"python3"` for the ZAP image)
+  and lists `mise.toml` in its path filter, and the build fails when they
+  differ. No `python-version` input in `ci-python`: under mise it is ignored.
+
 - **Shared Python comes from [appkit](https://github.com/jay-withers/appkit)**,
   never a copy: security headers, `/healthz` and `/readyz`, the passcode
   gate, secret resolution, the R2 backup job, the selfcheck loop and the
