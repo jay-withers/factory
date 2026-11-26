@@ -344,8 +344,8 @@ github-repos.
 ## Renovate
 
 Shared preset: [jay-withers/renovate](https://github.com/jay-withers/renovate).
-It auto-merges everything, majors included, once required checks pass, in a
-batch on Mondays, and only for releases at least 3 days old. What a merged
+It auto-merges everything, majors included (Node's apart), once required
+checks pass, in a batch on Mondays, and only for releases at least 3 days old. What a merged
 update then does:
 
 | Update | After auto-merge |
@@ -355,6 +355,7 @@ update then does:
 | GitHub Actions, pre-commit hooks, shared workflow pins | tag only |
 | mise tools (`mise.toml` + `mise.lock`) | tag only; CI already ran on the new versions |
 | Python base-image **minor** (3.14 → 3.15), or Python's in `mise.toml` | never auto-merged; review it, and move both together so CI tests the interpreter that ships |
+| Node **major** (`mise.toml`'s `node`, the Dockerfile's `node` image, `@types/node`) | never raised (renovate's npm preset); move all three by hand in one PR once the new major is LTS. Minors move the image with `mise.toml` in the mise tools PR |
 
 ## Identities and permissions
 
