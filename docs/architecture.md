@@ -224,11 +224,13 @@ flowchart LR
 ```
 
 - health is the example. finances and career have the same shape.
-  observability (obsview) is a stateless app over the workspace. repo-agent
-  and security-testing are jobs only, with no ingress, and are the two that
-  aren't Python: repo-agent is a Go binary on distroless, security-testing
-  TypeScript on the ZAP image (with `node` copied out of dev-containers'
-  `node-app`), so neither uses appkit or python-app.
+  observability (obsview) is a stateless app over the workspace, and the one
+  web app that isn't Python: ASP.NET Core on dev-containers' `dotnet-app`,
+  with its passcode gate and headers ported from appkit rather than
+  imported. repo-agent and security-testing are jobs only, with no ingress,
+  and aren't Python either: repo-agent is a Go binary on distroless,
+  security-testing TypeScript on the ZAP image (with `node` copied out of
+  dev-containers' `node-app`), so neither uses appkit or python-app.
 - **appkit** is the shared library: security headers, the passcode gate,
   secret resolution, `selfcheck` and the backup job. A fix there reaches every
   app on its next bump.
