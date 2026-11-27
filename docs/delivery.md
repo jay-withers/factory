@@ -355,6 +355,7 @@ update then does:
 | GitHub Actions, pre-commit hooks, shared workflow pins | tag only |
 | mise tools (`mise.toml` + `mise.lock`) | tag only; CI already ran on the new versions |
 | Python base-image **minor** (3.14 → 3.15), or Python's in `mise.toml` | never auto-merged; review it, and move both together so CI tests the interpreter that ships |
+| .NET SDK and NuGet (`mise.toml`'s `dotnet` + its `mise.lock` entry, `packages.lock.json`) | SDK patches and feature bands in the mise tools PR, NuGet non-majors in one "nuget packages" PR. The SDK major, ASP.NET Core, EF Core and `mcr.microsoft.com/dotnet` majors are never raised (renovate's dotnet preset) |
 | Node **major** (`mise.toml`'s `node`, the Dockerfile's `node` image, `@types/node`) | never raised (renovate's npm preset); move all three by hand in one PR once the new major is LTS. Minors move the image with `mise.toml` in the mise tools PR |
 
 ## Identities and permissions
@@ -565,6 +566,12 @@ still issues readable OIDC subjects, not the immutable form.
   upgrade step of their own: they build on dev-containers' `python-app` and
   `python-app-builder`, which upgrade on their own rebuild (`ARG REBUILD`),
   so they pick up OS fixes through Renovate's digest bumps of those images.
+  observability's .NET image is the same with dev-containers' `dotnet-app`
+  and `dotnet-app-builder` (Ubuntu, `apt-get upgrade` behind `REBUILD`), and
+  dev-containers' `cd-patch-check` scans `dotnet-app:latest` as well as
+  `python-app:latest`, so a fixable Ubuntu finding dispatches an early
+  rebuild. Renovate moves the `dotnet-app` pair together, at any time of the
+  week, like the Python pair.
 - **New Python minors break image builds** before tests notice. Compiled deps
   (httptools, pydantic-core, psycopg-binary) have no wheels yet, and the slim
   image has no compiler.
@@ -585,6 +592,15 @@ still issues readable OIDC subjects, not the immutable form.
   `"node"`. Renovate moves the image's Node minors and patches in the `mise
   tools` PR with `mise.toml`'s, and never raises the major (the npm preset):
   that moves by hand, with `@types/node`, once the new major is LTS.
+- **A .NET app's SDK is `mise.toml`'s, and its image's runtime must match
+  it.** observability's `ci-dotnet` builds and tests with mise's SDK, and a
+  framework-dependent app won't start on a runtime of another major.
+  `docker.yml` (workflows v1.39.0+) runs `dotnet --list-runtimes` in the
+  image when it sets `"dotnet"` and fails unless every runtime has the SDK
+  pin's major.minor. Renovate never raises the SDK's major, nor ASP.NET Core,
+  EF Core or Microsoft's .NET image majors (the dotnet preset). A new runtime
+  moves the `TargetFramework`, `mise.toml` and the dev-containers base
+  together, by hand.
 - **terraform-docs must not read the lock file** (`lockfile: false`). Reading
   it, every lock refresh rewrote the README, Renovate's lock-file maintenance
   PRs (which can't run hooks) failed pre-commit for a month, and the

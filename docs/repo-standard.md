@@ -45,6 +45,7 @@ and holds only what is specific to the repo.
 | `schedule-drift.yml` | `terraform-deploy.yml` with `drift: true` | | Every repo with `cd-terraform` |
 | `manual-terraform-unlock.yml` | `terraform-unlock.yml` | | Every repo with `cd-terraform` |
 | `ci-python.yml` | `python.yml` | `test / Test` | Python apps |
+| `ci-dotnet.yml` | `dotnet.yml` | `test / Test` | .NET apps (observability) |
 | `ci-container-build.yml` | `docker.yml` | `container-build` (gate) | Image repos |
 | `cd-publish.yml` | `docker.yml` + `container-apps-deploy.yml` | | Container Apps apps, called from `cd-tag` |
 
@@ -94,10 +95,10 @@ scripts/check-tf-standards.sh  # shared verbatim; re-copy, never edit
 `src/`, `tests/`, `pyproject.toml` + `uv.lock`, `Dockerfile` (built on
 dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
 `typecheck`, `build`, `deploy`, `deployed-tag`, `smoke`, `secrets`, `logs`, `url`.
-That is the Python shape, which most apps have. repo-agent (Go) and
-security-testing (TypeScript) are the deliberate exceptions, below: the same
-Makefile targets, Terraform, workflows and required checks, a different
-language inside.
+That is the Python shape, which most apps have. repo-agent (Go),
+security-testing (TypeScript) and observability (.NET) are the deliberate
+exceptions, below: the same Makefile targets, Terraform, workflows and
+required checks, a different language inside.
 
 - **`mise.toml`'s `python` is the image's Python** (major.minor). Local runs
   and `ci-python` test on it, so `ci-container-build` passes `"python":
@@ -151,6 +152,35 @@ language inside.
 
   A second Go app is the point at which `internal/settings` (and probably
   `internal/fetch`) become a shared Go module, the Go counterpart of appkit.
+- **observability is the .NET app** (obsview, ported from FastAPI in November
+  2026 with its routes, cookies and pages unchanged, and its tests ported to
+  xunit). In place of the Python files, under `app/`:
+  - `Obsview.slnx`, `src/Obsview` (ASP.NET Core, MVC with Razor views) and
+    `tests/Obsview.Tests` (xunit.v3).
+  - `global.json`, opting `dotnet test` into Microsoft.Testing.Platform, which
+    workflows' `dotnet.yml` requires.
+  - `Directory.Build.props`: `RestorePackagesWithLockFile`, plus analyzers and
+    `EnforceCodeStyleInBuild`, so warnings-as-errors is the lint gate.
+    `TreatWarningsAsErrors` stays out of it, or a new NuGet advisory would
+    fail restore.
+  - A `packages.lock.json` per project, committed and excluded from the
+    `end-of-file-fixer` and `pretty-format-json` hooks: NuGet rewrites the
+    file in its own format on every restore, and `dotnet.yml`'s `locked`
+    check fails on any change.
+  - A `root = true` `.editorconfig`, so `dotnet format` reads the same in
+    CI as on a laptop, whatever folder the clone sits under.
+  - The SDK comes from `mise.toml`'s `dotnet` (`core:dotnet`). `ci-dotnet`
+    calls `dotnet.yml` from a job named `test`, so it reports `test / Test`,
+    with a locked restore, the build with warnings as errors, `dotnet
+    format`, and the same 90% floors. `ci-codeql` passes
+    `languages: '["csharp", "actions"]'` (build-mode none).
+  - The image builds on dev-containers' `dotnet-app-builder` and runs on
+    `dotnet-app`, at the same version. `ci-container-build` passes
+    `"dotnet": "dotnet"` (workflows v1.39.0+), which fails the build when the
+    image's .NET runtime isn't `mise.toml`'s SDK major.minor.
+  - Renovate's `dotnet` preset keeps the SDK pin current.
+  - Nothing comes from appkit, which is Python: the passcode session and CSRF
+    are ports of appkit's rules, and change there by hand.
 - **Web apps have browser tests in `tests/e2e/`** (Playwright, through
   `appkit.testing`): the real app on a free port against seeded local data,
   covering the passcode gate, every screen, and each main write checked after

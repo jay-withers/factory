@@ -224,10 +224,13 @@ flowchart LR
 ```
 
 - health is the example. finances and career have the same shape.
-  observability (obsview) is a stateless app over the workspace. repo-agent
-  and security-testing are jobs only, with no ingress, and are the two that
-  aren't Python: repo-agent is a Go binary on distroless, security-testing
-  TypeScript on the ZAP image, so neither uses appkit or python-app.
+  observability (obsview) is a stateless app over the workspace, and the one
+  web app that isn't Python: ASP.NET Core on dev-containers' `dotnet-app`,
+  with its passcode gate and headers ported from appkit rather than
+  imported. repo-agent and security-testing are jobs only, with no ingress,
+  and aren't Python either: repo-agent is a Go binary on distroless,
+  security-testing TypeScript on the ZAP image, so neither uses appkit or
+  python-app.
 - **appkit** is the shared library: security headers, the passcode gate,
   secret resolution, `selfcheck` and the backup job. A fix there reaches every
   app on its next bump.
@@ -342,7 +345,7 @@ flowchart LR
   tmpl["template-repo-base<br/>template-repo-terraform-root"] -- "new repo from" --> repo["every repo"]
   wf["workflows<br/>reusable CI/CD, pinned by SHA"] --> repo
   ren["renovate<br/>shared presets"] --> repo
-  dc["dev-containers<br/>python-app images (ghcr.io)"] --> apps["app repos"]
+  dc["dev-containers<br/>python-app and dotnet-app images (ghcr.io)"] --> apps["app repos"]
   ak["appkit<br/>git tag"] --> apps
   tc["toolchain<br/>machine setup"] --> laptop(["your machine"])
   repo -. "mise.toml pins tools" .-> laptop
