@@ -94,6 +94,10 @@ scripts/check-tf-standards.sh  # shared verbatim; re-copy, never edit
 `src/`, `tests/`, `pyproject.toml` + `uv.lock`, `Dockerfile` (built on
 dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
 `typecheck`, `build`, `deploy`, `deployed-tag`, `smoke`, `secrets`, `logs`, `url`.
+That is the Python shape, which most apps have. repo-agent (Go) and
+security-testing (TypeScript) are the deliberate exceptions, below: the same
+Makefile targets, Terraform, workflows and required checks, a different
+language inside.
 
 - **`mise.toml`'s `python` is the image's Python** (major.minor). Local runs
   and `ci-python` test on it, so `ci-container-build` passes `"python":
@@ -112,9 +116,11 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   use: `web` (headers, health, passcode), `azure` (keyvault), `backup`, and `e2e` in
   the dev extra. The builder needs dev-containers v0.22.0+, which has git. A
   fix to one of those goes in appkit with its regression test. career,
-  finances, health, market-agent and repo-agent use it. security-testing is
-  the deliberate exception: it is TypeScript (below), and its secret lookup
-  is one env-then-vault helper.
+  finances, health and market-agent use it. repo-agent (Go) and
+  security-testing (TypeScript) can't, and are the deliberate exceptions
+  (below): repo-agent ports appkit's secret resolution into
+  `internal/settings`, and security-testing's lookup is one env-then-vault
+  helper.
 - **security-testing is the TypeScript app** (ported from Python in
   November 2026): `package.json` + `package-lock.json` in place of
   `pyproject.toml` + `uv.lock`, and Node from `mise.toml`, which the image
@@ -124,6 +130,27 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   other app. Node runs the `.ts` sources directly, with no build step, and
   the image runs it under `tini`, because the ZAP wrappers orphan processes
   that Node can't reap as PID 1.
+- **repo-agent is the Go app** (ported from Python in November 2026, with
+  golden files the Python wrote proving no visible change). In place of the
+  Python files: `go.mod` + `go.sum`, `cmd/repoagent` and `internal/`, and
+  `testdata/golden` pinning every visible output.
+  - Go and golangci-lint come from `mise.toml`, and CI, CodeQL and the image
+    all build with that Go (`GOTOOLCHAIN=local`).
+  - `ci-go` calls workflows' `go.yml` from a job named `test`, so it reports
+    `test / Test`, with gofmt, vet, golangci-lint, `go mod tidy -diff`,
+    `-race` and the same 90% floors. `ci-codeql` passes
+    `languages: '["go", "actions"]'` (workflows v1.38.0+ autobuilds Go).
+  - **The image is not on dev-containers**: the official `golang` image at
+    exactly `mise.toml`'s `go` builds a static binary (`CGO_ENABLED=0`), and
+    `gcr.io/distroless/static-debian13` runs it as uid 10001. Both are
+    digest-pinned, and Renovate's `go` preset moves the builder in the same
+    "mise tools" PR as `mise.toml`'s `go`. There is no `"python"` image
+    field, because there is no Python in it.
+  - Logs keep the Python line format, so obsview's error grouping works the
+    same.
+
+  A second Go app is the point at which `internal/settings` (and probably
+  `internal/fetch`) become a shared Go module, the Go counterpart of appkit.
 - **Web apps have browser tests in `tests/e2e/`** (Playwright, through
   `appkit.testing`): the real app on a free port against seeded local data,
   covering the passcode gate, every screen, and each main write checked after
