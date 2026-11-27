@@ -568,13 +568,20 @@ still issues readable OIDC subjects, not the immutable form.
 - **An app's tested Python is `mise.toml`'s, and must be its image's.**
   `ci-python` runs on the interpreter mise installs (`python-version` only
   applies without mise), and the image's is its base's (dev-containers
-  `python-app`, or the ZAP image for security-testing). `docker.yml` (workflows
+  `python-app`). `docker.yml` (workflows
   v1.35.0+) compares the two when an image sets `"python"`, on every PR that
   builds the image (`mise.toml` is in each app's image path filter) and in the
   daily build of main, and fails on a major.minor mismatch, which on main opens
   `build-failed`. Renovate never raises mise's Python minor on its own
   (jay-withers/renovate's mise preset): the `python-app` PR that moves the
   interpreter fails the check, and bumping `mise.toml` in that PR lands both.
+- **A TypeScript app's Node is `mise.toml`'s, and its image's major must
+  match.** security-testing's `ci-node` runs `node.yml` on mise's Node, and
+  its image copies `node` from the official image at the same release.
+  `docker.yml` (workflows v1.36.0+) compares the majors when an image sets
+  `"node"`. Renovate moves the image's Node minors and patches in the `mise
+  tools` PR with `mise.toml`'s, and never raises the major (the npm preset):
+  that moves by hand, with `@types/node`, once the new major is LTS.
 - **terraform-docs must not read the lock file** (`lockfile: false`). Reading
   it, every lock refresh rewrote the README, Renovate's lock-file maintenance
   PRs (which can't run hooks) failed pre-commit for a month, and the
