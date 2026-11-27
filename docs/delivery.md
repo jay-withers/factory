@@ -288,7 +288,7 @@ permission; without it the delivery checks stay silent.
 | Terraform: Checkov + tflint | pre-commit, locally and in CI | Yes (`pre-commit / Pre-commit`) |
 | Container images: Trivy | shared `docker.yml`, every build, and daily on main | PRs on fixable CRITICAL/HIGH (`container-build`); never a publish. A failing daily build opens a `build-failed` issue |
 | Image Python vs `mise.toml` | shared `docker.yml` (v1.35.0+), every non-push build, and daily on main | PRs on a major.minor mismatch (`container-build`). A failing daily build opens a `build-failed` issue |
-| Code: CodeQL | `ci-codeql`, Python repos | No; alerts in the Security tab |
+| Code: CodeQL | `ci-codeql`: each app's code (`python`, `javascript-typescript`, or `go`, autobuilt with mise's Go in workflows v1.38.0+) and every repo's workflows (`actions`) | No; alerts in the Security tab |
 | Secrets: gitleaks | pre-commit | Locally, and in CI |
 | Secrets: GitHub secret scanning + push protection | every repo (github-repos `repo_defaults`) | Pushes containing a known secret |
 | Image provenance + SBOM | shared `docker.yml` attests every pushed image (v1.22.0+) | Deploys: `container-apps-deploy.yml` refuses an unattested tag when `verify-images` is set |
@@ -557,8 +557,11 @@ still issues readable OIDC subjects, not the immutable form.
   `OS_PATCH_DATE`, today's UTC date, to every build: declare `ARG
   OS_PATCH_DATE` directly before the upgrade step and that layer re-runs once
   a day while everything above it stays cached. Declared in
-  security-testing's image and market-agent's dashboard. The Python app
-  images (health, finances, career, repo-agent, market-agent's API) carry no
+  security-testing's image and market-agent's dashboard. repo-agent's
+  distroless image has no package manager to run: its OS layer moves with
+  Renovate's digest bumps of `gcr.io/distroless/static-debian13`, and its Go
+  modules with the go preset's PRs. The Python app
+  images (health, finances, career, market-agent's API) carry no
   upgrade step of their own: they build on dev-containers' `python-app` and
   `python-app-builder`, which upgrade on their own rebuild (`ARG REBUILD`),
   so they pick up OS fixes through Renovate's digest bumps of those images.
