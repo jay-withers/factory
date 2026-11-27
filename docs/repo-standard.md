@@ -97,9 +97,8 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
 
 - **`mise.toml`'s `python` is the image's Python** (major.minor). Local runs
   and `ci-python` test on it, so `ci-container-build` passes `"python":
-  "python"` on the image (workflows v1.35.0+, `"python3"` for the ZAP image)
-  and lists `mise.toml` in its path filter, and the build fails when they
-  differ. No `python-version` input in `ci-python`: under mise it is ignored.
+  "python"` on the image (workflows v1.35.0+) and lists `mise.toml` in its
+  path filter, and the build fails when they differ. No `python-version` input in `ci-python`: under mise it is ignored.
 
 - **Shared Python comes from [appkit](https://github.com/jay-withers/appkit)**,
   never a copy: security headers, `/healthz` and `/readyz`, the passcode
@@ -114,8 +113,17 @@ dev-containers' `python-app` images), `.env.example`, and `make run`, `test`,
   the dev extra. The builder needs dev-containers v0.22.0+, which has git. A
   fix to one of those goes in appkit with its regression test. career,
   finances, health, market-agent and repo-agent use it. security-testing is
-  the deliberate exception: it runs on the ZAP image's Python 3.11 (appkit
-  needs 3.12+), and its secret lookup is one env-then-vault helper.
+  the deliberate exception: it is TypeScript (below), and its secret lookup
+  is one env-then-vault helper.
+- **security-testing is the TypeScript app** (ported from Python in
+  November 2026): `package.json` + `package-lock.json` in place of
+  `pyproject.toml` + `uv.lock`, and Node from `mise.toml`, which the image
+  copies in from the official `node` image onto the ZAP base and checks with
+  `"node": "node"` (workflows v1.36.0+, major only). `ci-node` calls
+  `node.yml` from a job named `test`, so it reports `test / Test` like every
+  other app. Node runs the `.ts` sources directly, with no build step, and
+  the image runs it under `tini`, because the ZAP wrappers orphan processes
+  that Node can't reap as PID 1.
 - **Web apps have browser tests in `tests/e2e/`** (Playwright, through
   `appkit.testing`): the real app on a free port against seeded local data,
   covering the passcode gate, every screen, and each main write checked after
