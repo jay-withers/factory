@@ -123,8 +123,9 @@ language inside.
   helper.
 - **security-testing is the TypeScript app** (ported from Python in
   November 2026): `package.json` + `package-lock.json` in place of
-  `pyproject.toml` + `uv.lock`, and Node from `mise.toml`, which the image
-  copies in from the official `node` image onto the ZAP base and checks with
+  `pyproject.toml` + `uv.lock`, and Node from `mise.toml`. The image copies
+  `node` out of dev-containers' `node-app` onto the ZAP base (it can't build
+  `FROM` it), installs `node_modules` in `node-app-builder`, and checks with
   `"node": "node"` (workflows v1.36.0+, major only). `ci-node` calls
   `node.yml` from a job named `test`, so it reports `test / Test` like every
   other app. Node runs the `.ts` sources directly, with no build step, and

@@ -580,11 +580,14 @@ still issues readable OIDC subjects, not the immutable form.
   interpreter fails the check, and bumping `mise.toml` in that PR lands both.
 - **A TypeScript app's Node is `mise.toml`'s, and its image's major must
   match.** security-testing's `ci-node` runs `node.yml` on mise's Node, and
-  its image copies `node` from the official image at the same release.
-  `docker.yml` (workflows v1.36.0+) compares the majors when an image sets
-  `"node"`. Renovate moves the image's Node minors and patches in the `mise
-  tools` PR with `mise.toml`'s, and never raises the major (the npm preset):
-  that moves by hand, with `@types/node`, once the new major is LTS.
+  its image copies `node` out of dev-containers' `node-app`, which carries
+  the same release. `docker.yml` (workflows v1.36.0+) compares the majors
+  when an image sets `"node"`. Renovate raises the `node-app` pair in one PR
+  at any time (the docker preset), as it does `python-app`'s, because its
+  releases are security rebuilds; in dev-containers it moves `node-app`'s
+  Node minors and patches, and never the major (the npm preset): that moves
+  by hand, with `mise.toml`'s `node` and `@types/node`, once the new major
+  is LTS.
 - **terraform-docs must not read the lock file** (`lockfile: false`). Reading
   it, every lock refresh rewrote the README, Renovate's lock-file maintenance
   PRs (which can't run hooks) failed pre-commit for a month, and the
