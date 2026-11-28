@@ -189,7 +189,8 @@ required checks, a different language inside.
   block is one). `ci-python.yml` passes `playwright: true` (workflows
   v1.29.0+), so they run inside `test / Test` with no new required check.
   They skip locally without Chromium and fail under CI; `make e2e` installs
-  it. career, finances and health have them.
+  it, and jay-withers/toolchain installs the system libraries it links on
+  Linux. career, finances and health have them.
 - **The smoke test is jay-withers/workflows' `scripts/smoke.sh`**
   (workflows v1.30.0+), never a copy: `make smoke` fetches it at the commit
   `cd-publish.yml` pins `container-apps-deploy.yml` to, so CI and a local run
